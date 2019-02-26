@@ -23,6 +23,9 @@ const {
 
 const configuration = require('./configure/keys');
 
+const subject_table = require('./configure/subject_loopup');
+
+
 const APIKey = configuration.API_key;
 
 // Import the firebase-functions package for deployment.
@@ -31,18 +34,21 @@ const functions = require('firebase-functions');
 // Instantiate the Dialogflow client.
 const app = dialogflow({debug: true});
 
-let postURL = 'https://api.uri.edu/v1/catalog/';
+let baseURL = 'https://api.uri.edu/v1/catalog/courses/';
+let subject = '';
+let courseNum = '';
+let minNum = '';
+let maxNum = '';
 
 
- //Instantiate the Dialogflow client.
+ // Instantiate the Dialogflow client.
 function checkServer() {
     request
-        .post(postURL).form({id: APIKey})
-        .on('response', function (response) {
-            console.log(response.statusCode) // 200
-            console.log(response.headers['content-type']) // 'image/png'
-            if(response.statusCode == 200)
-            {
+        .post(baseURL+subject+courseNum+minNum+maxNum).form({id: APIKey})
+        .on('response', function(response) {
+            console.log(response.statusCode); // 200
+            console.log(response.headers['content-type']); // 'image/png'
+            if (response.statusCode == 200) {
                 return null;
             }
         })
