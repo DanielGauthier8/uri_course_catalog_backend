@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 // Copyright 2018, Google, Inc.
 // Licensed under the Apache License, Version 2.0 (the 'License');
 // you may not use this file except in compliance with the License.
@@ -21,9 +22,9 @@ const {
     Suggestions,
 } = require('actions-on-google');
 
-const request = require('request');
 // Import the firebase-functions package for deployment.
 const functions = require('firebase-functions');
+
 
 // Instantiate the Dialogflow client
 const app = dialogflow({debug: true});
@@ -35,12 +36,12 @@ const subjectTable = require('./configure/subject_lookup');
 
 const APIKey = configuration.API_key;
 
-let baseURL = '';// 'https://api.uri.edu/v1/catalog/courses/';
+const baseURL = '';// 'https://api.uri.edu/v1/catalog/courses/';
 let subject = '';
 let courseNum = '';
 let minNum = '';
 let maxNum = '';
-let test = 'api.uri.edu/v1/catalog/courses/CSC/200 \n';
+const test = 'api.uri.edu/v1/catalog/courses/CSC/200 \n';
 let responseM = '';
 
 
@@ -64,11 +65,30 @@ const checkServer = function() {
         });
 };
 
-const suggestionsAfter = function (conv) {
+const suggestionsAfter = function(conv) {
     conv.ask(new Suggestions('Specific course', 'All courses in a subject'
-        , 'Courses within a range', 'No'));
-}
+        , 'Courses within a range', 'No Thanks'));
+};
 
+const commonResponse = function(conv, courseSubject, courseNumber1, courseNumber2) {
+    const courseCode = subjectTable[courseSubject];
+    if (courseNumber1 === null) {
+        conv.ask('I will get information about ' +
+            courseSubject + ' classes.' +
+            'Would you like to hear about another class?');
+    } else if (courseNumber2 === null) {
+        conv.ask('I will get information about ' +
+            courseSubject + ' classes between ' + courseNumber1 + ' and '
+            + courseNumber2 + '. Would you like to hear about another class?');
+    } else {
+        conv.ask('I will get information about ' +
+            courseSubject + ' ' + courseNumber1 + '. Also known as ' +
+            courseCode + responseM +
+            '. Would you like to hear about another class?');
+    }
+    suggestionsAfter(conv);
+
+};
 
 // fs.createReadStream('file.json').pipe(request.put('http://mysite.com/obj.json'))
 
@@ -95,7 +115,6 @@ app.intent('actions_intent_PERMISSION', (conv, params, permissionGranted) => {
         // If the user denied our request, go ahead with the conversation.
         conv.ask('Ok, no worries, what do you want to look up?');
         suggestionsAfter(conv);
-
     } else {
         // If the user accepted our request, store their name in
         // the 'conv.user.storage' object for the duration of the conversation.
@@ -108,29 +127,16 @@ app.intent('actions_intent_PERMISSION', (conv, params, permissionGranted) => {
 });
 
 
-app.intent('course_specific', (conv, {courseSubject, courseNumber}) => {
-    checkServer();// pass conv,courseSubject,number,and code
-    conv.ask('I will get information about ' +
-        courseSubject + ' ' + courseNumber + '. Also known as ' +
-        courseCode + responseM +' ' + courseNumber +
-        '. Would you like to hear about another class?');
-    suggestionsAfter(conv);
-
+app.intent('course_specific', (conv, {courseSubject, courseNumber1}) => {
+    commonResponse(conv, courseSubject, courseNumber1, null);
 });
 
 app.intent('courses_in_a_subject', (conv, {courseSubject}) => {
-    conv.ask('I will get information about ' +
-        courseSubject + ' classes.' +
-        'Would you like to hear about another class?');
-    suggestionsAfter(conv);
-
+    commonResponse(conv, courseSubject, null, null);
 });
 
-app.intent('courses_in_a_range', (conv, {courseSubject, cardinal1, cardinal2}) => {
-        conv.ask('I will get information about ' +
-            courseSubject + ' classes between ' + cardinal1 + ' and '
-            + cardinal2 + '. Would you like to hear about another class?');
-    suggestionsAfter(conv);
+app.intent('courses_in_a_range', (conv, {courseSubject, courseNumber1, courseNumber2}) => {
+    commonResponse(conv, courseSubject, courseNumber1, courseNumber2);
 });
 
 
