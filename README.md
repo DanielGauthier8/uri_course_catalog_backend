@@ -6,7 +6,7 @@ https://github.com/DanielGauthier8/uri_course_catalog_frontend
 
 ## Summary:
 
-This will be a google Assistant Action that can get details for course's at the University of Rhode Island.
+This will be a Google Assistant Action that can get details for course's at the University of Rhode Island.
 
 ## Proposal:
 
