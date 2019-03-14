@@ -9,6 +9,10 @@
         "tabWidth": 4,
         "ignoreUrls": true
       }
+    ],
+    "space-before-function-paren": [
+      "error",
+      "always"
     ]
   },
   "extends": ["google"],
