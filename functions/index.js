@@ -25,6 +25,7 @@ const {
 // Import the firebase-functions package for deployment.
 const functions = require('firebase-functions');
 
+const request = require('ajax-request');
 
 // Instantiate the Dialogflow client
 const app = dialogflow({debug: true});
@@ -39,19 +40,10 @@ const APIKey = configuration.API_key;
 /* const baseURL = '';// 'https://api.uri.edu/v1/catalog/courses/';*/
 const test = 'api.uri.edu/v1/catalog/courses/CSC/200';
 
-/*
-* Returns what is being requested from the server
-* @return      the image at the specified URL
- */
-
-// + baseURL + subject + courseNum + minNum + maxNum
-// my not work with enter after request
-// maybe strict mode
-
 
 /* ###########################Helper Functions######################################## */
 
-/* const checkServer = function() {
+const checkServer = function () {
     request
         .post(test).form({id: APIKey})
         .on('response', function(conversation, courseSubject, courseNumber1, courseNumber2) {
@@ -64,7 +56,7 @@ const test = 'api.uri.edu/v1/catalog/courses/CSC/200';
                     'Please come back and try again later');
             }
         });
-};*/
+};
 
 const suggestionsAfter = function (conversation) {
     conversation.ask(new Suggestions('Specific course', 'All courses in a subject'
@@ -72,6 +64,25 @@ const suggestionsAfter = function (conversation) {
 };
 
 const commonResponse = function (conversation, courseSubject, courseNumber1, courseNumber2) {
+    /*
+        const options = {
+            method: 'POST',
+            header: {id: APIKey},
+            json: true,
+            url: test,
+        }
+
+        request(options, function(err, response, body) {
+                console.log(response.statusCode); // 200
+                console.log(response.headers['content-type']);
+                if (response.statusCode === 200) {
+                    conversation.ask('I Talked to URI');
+                } else {
+                    conversation.ask('I apologize but it appears the univeristy\'s servers are down.' +
+                        'Please come back and try again later');
+                }
+            });
+        */
     const courseCode = subjectTable[courseSubject];
     if (courseNumber1 === null) {
         conversation.ask('I will get information about ' +
@@ -89,8 +100,6 @@ const commonResponse = function (conversation, courseSubject, courseNumber1, cou
     suggestionsAfter(conversation);
 };
 
-// fs.createReadStream('file.json').pipe(request.put('http://mysite.com/obj.json'))
-
 /* ###########################App Intents######################################## */
 app.intent('Default Welcome Intent', (conversation) => {
     const name = conversation.user.storage.userName;
@@ -101,8 +110,12 @@ app.intent('Default Welcome Intent', (conversation) => {
             permissions: 'NAME',
         }));
     } else {
-        const firstName = name.substring(0, name.indexOf(' '));
-        conversation.ask('Hi again ' + firstName + ', What do you want to look up?');
+        if (name.includes(' ') >= 1) {
+            const callName = name.substring(0, name.indexOf(' '));
+            conversation.ask('Hi again ' + callName + ', What do you want to look up?');
+        } else {
+            conversation.ask('Hi again ' + name + ', What do you want to look up?');
+        }
         suggestionsAfter(conversation);
     }
 });
