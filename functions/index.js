@@ -30,14 +30,14 @@ const functions = require('firebase-functions');
 const app = dialogflow({debug: true});
 
 // API keys
-// const configuration = require('./configure/keys');
+const configuration = require('./configure/keys');
 // The Subjects and associated course code
 const subjectTable = require('./configure/subject_lookup');
 
-// const APIKey = configuration.API_key;
+const APIKey = configuration.API_key;
 
 /* const baseURL = '';// 'https://api.uri.edu/v1/catalog/courses/';*/
-// const test = 'api.uri.edu/v1/catalog/courses/CSC/200';
+const test = 'api.uri.edu/v1/catalog/courses/CSC/200';
 
 /*
 * Returns what is being requested from the server
@@ -54,11 +54,14 @@ const subjectTable = require('./configure/subject_lookup');
 /* const checkServer = function() {
     request
         .post(test).form({id: APIKey})
-        .on('response', function (response) {
+        .on('response', function(conversation, courseSubject, courseNumber1, courseNumber2) {
             console.log(response.statusCode); // 200
             console.log(response.headers['content-type']);
             if (response.statusCode === 200) {
-                responseM = 'sweet';
+                conversation.ask('I Talked to URI');
+            } else {
+                conversation.ask('I apologize but it appears the univeristy\'s servers are down.' +
+                    'Please come back and try again later');
             }
         });
 };*/
