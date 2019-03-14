@@ -53,10 +53,10 @@ let responseM = '';
 // + baseURL + subject + courseNum + minNum + maxNum
 // my not work with enter after request
 // maybe strict mode
-const checkServer = function() {
+const checkServer = function () {
     request
         .post(test).form({id: APIKey})
-        .on('response', function(response) {
+        .on('response', function (response) {
             console.log(response.statusCode); // 200
             console.log(response.headers['content-type']);
             if (response.statusCode === 200) {
@@ -65,26 +65,26 @@ const checkServer = function() {
         });
 };
 
-const suggestionsAfter = function(conv) {
+const suggestionsAfter = function (conv) {
     conv.ask(new Suggestions('Specific course', 'All courses in a subject'
         , 'Courses within a range', 'No Thanks'));
 };
 
-const commonResponse = function(conv, courseSubject, courseNumber1, courseNumber2) {
+const commonResponse = function (conv, courseSubject, number1, number2) {
     const courseCode = subjectTable[courseSubject];
-    if (courseNumber1 === null) {
+    if (number1 === null) {
         conv.ask('I will get information about ' +
             courseSubject + ' classes.' +
             'Would you like to hear about another class?');
-    } else if (courseNumber2 === null) {
+    } else if (number2 === null) {
         conv.ask('I will get information about ' +
-            courseSubject + ' classes between ' + courseNumber1 + ' and '
-            + courseNumber2 + '. Would you like to hear about another class?');
-    } else {
-        conv.ask('I will get information about ' +
-            courseSubject + ' ' + courseNumber1 + '. Also known as ' +
+            courseSubject + ' ' + number1 + '. Also known as ' +
             courseCode + responseM +
             '. Would you like to hear about another class?');
+    } else {
+        conv.ask('I will get information about ' +
+            courseSubject + ' classes between ' + number1 + ' and '
+            + number2 + '. Would you like to hear about another class?');
     }
     suggestionsAfter(conv);
 
@@ -102,7 +102,12 @@ app.intent('Default Welcome Intent', (conv) => {
             permissions: 'NAME',
         }));
     } else {
-        const firstName = name.substring(0, name.indexOf(' '));
+        let firstName;
+        if (name.count(' ') >= 1) {
+            firstName = name.substring(0, name.indexOf(' '));
+        } else {
+            firstName = name;
+        }
         conv.ask('Hi again ' + firstName + ', What do you want to look up?');
         suggestionsAfter(conv);
     }
