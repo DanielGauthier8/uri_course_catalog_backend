@@ -1,7 +1,15 @@
 {
   "parserOptions": {
     "ecmaVersion": 7,
-    "sourceType": "script"
+    "sourceType": "script",
+    "max-len": [
+      2,
+      {
+        "code": 100,
+        "tabWidth": 4,
+        "ignoreUrls": true
+      }
+    ]
   },
   "extends": ["google"],
   "env": {

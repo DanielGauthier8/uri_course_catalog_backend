@@ -30,20 +30,14 @@ const functions = require('firebase-functions');
 const app = dialogflow({debug: true});
 
 // API keys
-const configuration = require('./configure/keys');
+// const configuration = require('./configure/keys');
 // The Subjects and associated course code
 const subjectTable = require('./configure/subject_lookup');
 
-const APIKey = configuration.API_key;
+// const APIKey = configuration.API_key;
 
-const baseURL = '';// 'https://api.uri.edu/v1/catalog/courses/';
-let subject = '';
-let courseNum = '';
-let minNum = '';
-let maxNum = '';
-const test = 'api.uri.edu/v1/catalog/courses/CSC/200 \n';
-let responseM = '';
-
+/* const baseURL = '';// 'https://api.uri.edu/v1/catalog/courses/';*/
+// const test = 'api.uri.edu/v1/catalog/courses/CSC/200';
 
 /*
 * Returns what is being requested from the server
@@ -53,7 +47,11 @@ let responseM = '';
 // + baseURL + subject + courseNum + minNum + maxNum
 // my not work with enter after request
 // maybe strict mode
-const checkServer = function () {
+
+
+/* ###########################Helper Functions######################################## */
+
+/* const checkServer = function() {
     request
         .post(test).form({id: APIKey})
         .on('response', function (response) {
@@ -63,85 +61,77 @@ const checkServer = function () {
                 responseM = 'sweet';
             }
         });
-};
+};*/
 
-const suggestionsAfter = function (conv) {
-    conv.ask(new Suggestions('Specific course', 'All courses in a subject'
+const suggestionsAfter = function (conversation) {
+    conversation.ask(new Suggestions('Specific course', 'All courses in a subject'
         , 'Courses within a range', 'No Thanks'));
 };
 
-const commonResponse = function (conv, courseSubject, number1, number2) {
+const commonResponse = function (conversation, courseSubject, courseNumber1, courseNumber2) {
     const courseCode = subjectTable[courseSubject];
-    if (number1 === null) {
-        conv.ask('I will get information about ' +
+    if (courseNumber1 === null) {
+        conversation.ask('I will get information about ' +
             courseSubject + ' classes.' +
             'Would you like to hear about another class?');
-    } else if (number2 === null) {
-        conv.ask('I will get information about ' +
-            courseSubject + ' ' + number1 + '. Also known as ' +
-            courseCode + responseM +
+    } else if (courseNumber2 === null) {
+        conversation.ask('I will get information about ' +
+            courseSubject + ' ' + courseNumber1 + '. Also known as ' + courseCode +
             '. Would you like to hear about another class?');
     } else {
-        conv.ask('I will get information about ' +
-            courseSubject + ' classes between ' + number1 + ' and '
-            + number2 + '. Would you like to hear about another class?');
+        conversation.ask('I will get information about ' +
+            courseSubject + ' classes between ' + courseNumber1 + ' and '
+            + courseNumber2 + '. Would you like to hear about another class?');
     }
-    suggestionsAfter(conv);
-
+    suggestionsAfter(conversation);
 };
 
 // fs.createReadStream('file.json').pipe(request.put('http://mysite.com/obj.json'))
 
-// Handle the Dialogflow intent named 'Default Welcome Intent'.
-app.intent('Default Welcome Intent', (conv) => {
-    const name = conv.user.storage.userName;
+/* ###########################App Intents######################################## */
+app.intent('Default Welcome Intent', (conversation) => {
+    const name = conversation.user.storage.userName;
     if (!name) {
         // Asks the user's permission to know their name, for personalization.
-        conv.ask(new Permission({
+        conversation.ask(new Permission({
             context: 'Hi there, so I can call you by your name',
             permissions: 'NAME',
         }));
     } else {
-        let firstName;
-        if (name.count(' ') >= 1) {
-            firstName = name.substring(0, name.indexOf(' '));
-        } else {
-            firstName = name;
-        }
-        conv.ask('Hi again ' + firstName + ', What do you want to look up?');
-        suggestionsAfter(conv);
+        const firstName = name.substring(0, name.indexOf(' '));
+        conversation.ask('Hi again ' + firstName + ', What do you want to look up?');
+        suggestionsAfter(conversation);
     }
 });
 
 // Handle the Dialogflow intent named 'actions_intent_PERMISSION'. If user
 // agreed to PERMISSION prompt, then boolean value 'permissionGranted' is true.
-app.intent('actions_intent_PERMISSION', (conv, params, permissionGranted) => {
+app.intent('actions_intent_PERMISSION', (conversation, params, permissionGranted) => {
     if (!permissionGranted) {
         // If the user denied our request, go ahead with the conversation.
-        conv.ask('Ok, no worries, what do you want to look up?');
-        suggestionsAfter(conv);
+        conversation.ask('Ok, no worries, what do you want to look up?');
+        suggestionsAfter(conversation);
     } else {
         // If the user accepted our request, store their name in
-        // the 'conv.user.storage' object for the duration of the conversation.
-        conv.user.storage.userName = conv.user.name.display;
-        conv.ask('Thanks, ' + conv.user.storage.userName + '. What do you' +
+        // the 'conversation.user.storage' object for the duration of the conversation.
+        conversation.user.storage.userName = conversation.user.name.display;
+        conversation.ask('Thanks, ' + conversation.user.storage.userName + '. What do you' +
             ' want to look up?');
-        suggestionsAfter(conv);
-
+        suggestionsAfter(conversation);
     }
 });
 
 
-app.intent('course_specific', (conv, {courseSubject, courseNumber1}) => {
-    commonResponse(conv, courseSubject, courseNumber1, null);
+app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => {
+    commonResponse(conversation, courseSubject, courseNumber1, null);
 });
 
-app.intent('courses_in_a_subject', (conv, {courseSubject}) => {
-    commonResponse(conv, courseSubject, null, null);
+app.intent('courses_in_a_subject', (conversation, {courseSubject}) => {
+    commonResponse(conversation, courseSubject, null, null);
 });
 
-app.intent('courses_in_a_range', (conv, {courseSubject, courseNumber1, courseNumber2}) => {
-    commonResponse(conv, courseSubject, courseNumber1, courseNumber2);
+app.intent('courses_in_a_range', (conversation, {courseSubject, courseNumber1, courseNumber2}) => {
+    commonResponse(conversation, courseSubject, courseNumber1, courseNumber2);
 });
 
 
@@ -150,15 +140,15 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest(app);
 
 // Handle the Dialogflow NO_INPUT intent.
 // Triggered when the user doesn't provide input to the Action
-app.intent('actions_intent_NO_INPUT', (conv) => {
+app.intent('actions_intent_NO_INPUT', (conversation) => {
     // Use the number of reprompts to vary response
-    const repromptCount = parseInt(conv.arguments.get('REPROMPT_COUNT'));
+    const repromptCount = parseInt(conversation.arguments.get('REPROMPT_COUNT'));
     if (repromptCount === 0) {
-        conv.ask('What would you like to hear about?');
+        conversation.ask('What would you like to hear about?');
     } else if (repromptCount === 1) {
-        conv.ask('Please say the name of a class or course number.');
-    } else if (conv.arguments.get('IS_FINAL_REPROMPT')) {
-        conv.close('Sorry we\'re having trouble. Let\'s ' +
+        conversation.ask('Please say the name of a class or course number.');
+    } else if (conversation.arguments.get('IS_FINAL_REPROMPT')) {
+        conversation.close('Sorry we\'re having trouble. Let\'s ' +
             'try this again later. Goodbye.');
     }
 });
