@@ -25,7 +25,7 @@ const {
 // Import the firebase-functions package for deployment.
 const functions = require('firebase-functions');
 
-const request = require('ajax-request');
+const request = require('request');
 
 // Instantiate the Dialogflow client
 const app = dialogflow({debug: true});
@@ -43,7 +43,7 @@ const test = 'api.uri.edu/v1/catalog/courses/CSC/200';
 
 /* ###########################Helper Functions######################################## */
 
-const checkServer = function () {
+/* const checkServer = function () {
     request
         .post(test).form({id: APIKey})
         .on('response', function(conversation, courseSubject, courseNumber1, courseNumber2) {
@@ -56,7 +56,7 @@ const checkServer = function () {
                     'Please come back and try again later');
             }
         });
-};
+}; */
 
 const suggestionsAfter = function (conversation) {
     conversation.ask(new Suggestions('Specific course', 'All courses in a subject'
@@ -64,40 +64,46 @@ const suggestionsAfter = function (conversation) {
 };
 
 const commonResponse = function (conversation, courseSubject, courseNumber1, courseNumber2) {
-    /*
         const options = {
             method: 'POST',
             header: {id: APIKey},
             json: true,
             url: test,
         }
-
-        request(options, function(err, response, body) {
-                console.log(response.statusCode); // 200
-                console.log(response.headers['content-type']);
-                if (response.statusCode === 200) {
-                    conversation.ask('I Talked to URI');
-                } else {
-                    conversation.ask('I apologize but it appears the univeristy\'s servers are down.' +
-                        'Please come back and try again later');
-                }
-            });
-        */
-    const courseCode = subjectTable[courseSubject];
-    if (courseNumber1 === null) {
-        conversation.ask('I will get information about ' +
-            courseSubject + ' classes.' +
-            'Would you like to hear about another class?');
-    } else if (courseNumber2 === null) {
-        conversation.ask('I will get information about ' +
-            courseSubject + ' ' + courseNumber1 + '. Also known as ' + courseCode +
-            '. Would you like to hear about another class?');
-    } else {
-        conversation.ask('I will get information about ' +
-            courseSubject + ' classes between ' + courseNumber1 + ' and '
-            + courseNumber2 + '. Would you like to hear about another class?');
-    }
-    suggestionsAfter(conversation);
+    request(options)
+        .then(function (response) {
+            // Request was successful, use the response object at will
+            console.log(response.statusCode); // 200
+            console.log(response.headers['content-type']);
+            if (response.statusCode === 200) {
+                conversation.ask('I Talked to URI');
+                // let response = JSON.parse(body);
+            } else {
+                conversation.ask('I apologize but it appears the univeristy\'s servers are down.' +
+                    'Please come back and try again later');
+            }
+        })
+        .catch(function (err) {
+            // Something bad happened, handle the error
+            conversation.ask('Something bad happened.' +
+                'Please come back and try again later');
+        });
+    /*
+const courseCode = subjectTable[courseSubject];
+if (courseNumber1 === null) {
+    conversation.ask('I will get information about ' +
+        courseSubject + ' classes.' +
+        'Would you like to hear about another class?');
+} else if (courseNumber2 === null) {
+    conversation.ask('I will get information about ' +
+        courseSubject + ' ' + courseNumber1 + '. Also known as ' + courseCode +
+        '. Would you like to hear about another class?');
+} else {
+    conversation.ask('I will get information about ' +
+        courseSubject + ' classes between ' + courseNumber1 + ' and '
+        + courseNumber2 + '. Would you like to hear about another class?');
+}
+suggestionsAfter(conversation);*/
 };
 
 /* ###########################App Intents######################################## */
