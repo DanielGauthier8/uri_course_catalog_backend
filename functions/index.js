@@ -22,6 +22,9 @@ const {
     Suggestions,
 } = require('actions-on-google');
 
+let output = 'nothing happened';
+
+
 // Import the firebase-functions package for deployment.
 const functions = require('firebase-functions');
 
@@ -43,8 +46,7 @@ const test = 'https://api.uri.edu/v1/catalog/courses/CSC/200';
 
 /* ###########################Helper Functions######################################## */
 
-function callURIApi(courseSubject, courseNumber1, courseNumber2) {
-    let output = 'nothing happened';
+function callURIApi(conversation, courseSubject, courseNumber1, courseNumber2) {
     const options = {
         method: 'GET',
         headers: {
@@ -53,7 +55,7 @@ function callURIApi(courseSubject, courseNumber1, courseNumber2) {
         json: true,
         url: test,
     };
-    output = request(options, function (err, response, body) {
+    request(options, function (err, response, body) {
         // Request was successful, use the response object at will
         if (!err && response.statusCode === 200) {
             // Check URI's server
@@ -70,10 +72,10 @@ function callURIApi(courseSubject, courseNumber1, courseNumber2) {
         if (response.statusCode !== null) {
             console.log(body);
         }
+        conversation.ask(output);
         // console.log(output);
-        return output;
     });
-    return output;
+    // return output;
 }
 
 const suggestionsAfter = function (conversation) {
@@ -160,9 +162,7 @@ app.intent('actions_intent_PERMISSION', (conversation, params, permissionGranted
 
 app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => {
     // Call the weather API
-    const APIResponse = callURIApi(courseSubject, courseNumber1, null);
-    console.log(APIResponse);
-    conversation.ask(JSON.stringify(APIResponse)); // Return the results of the weather API to Dialogflow
+    callURIApi(conversation, courseSubject, courseNumber1, null);
     // conversation.ask('Please wait');
     // commonResponse(conversation, courseSubject, courseNumber1, null);
 });
