@@ -12,7 +12,11 @@
     ],
     "space-before-function-paren": [
       "error",
-      "always"
+      {
+        "anonymous": "always",
+        "named": "always",
+        "asyncArrow": "always"
+      }
     ]
   },
   "extends": ["google"],

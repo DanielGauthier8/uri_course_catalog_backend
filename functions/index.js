@@ -38,25 +38,43 @@ const subjectTable = require('./configure/subject_lookup');
 const APIKey = configuration.API_key;
 
 /* const baseURL = '';// 'https://api.uri.edu/v1/catalog/courses/';*/
-const test = 'api.uri.edu/v1/catalog/courses/CSC/200';
+const test = 'https://api.uri.edu/v1/catalog/courses/CSC/200';
 
 
 /* ###########################Helper Functions######################################## */
 
-/* const checkServer = function () {
-    request
-        .post(test).form({id: APIKey})
-        .on('response', function(conversation, courseSubject, courseNumber1, courseNumber2) {
-            console.log(response.statusCode); // 200
-            console.log(response.headers['content-type']);
-            if (response.statusCode === 200) {
-                conversation.ask('I Talked to URI');
-            } else {
-                conversation.ask('I apologize but it appears the univeristy\'s servers are down.' +
-                    'Please come back and try again later');
-            }
-        });
-}; */
+function callURIApi(courseSubject, courseNumber1, courseNumber2) {
+    let output = 'nothing happened';
+    const options = {
+        method: 'GET',
+        headers: {
+            id: APIKey,
+        },
+        json: true,
+        url: test,
+    };
+    output = request(options, function (err, response, body) {
+        // Request was successful, use the response object at will
+        if (!err && response.statusCode === 200) {
+            // Check URI's server
+            output = 'I talked to URI!';
+            // Resolve the promise with the output text
+        } else if (!err && response.statusCode === 400) {
+            output = 'No credentials were supplied!';
+            console.log(response);
+        } else {
+            console.log(`Error calling the URI API: ${err}`)
+            output = 'I apologize but it appears the univeristy\'s servers are down.' +
+                'Please come back and try again later!';
+        }
+        if (response.statusCode !== null) {
+            console.log(body);
+        }
+        // console.log(output);
+        return output;
+    });
+    return output;
+}
 
 const suggestionsAfter = function (conversation) {
     conversation.ask(new Suggestions('Specific course', 'All courses in a subject'
@@ -64,31 +82,27 @@ const suggestionsAfter = function (conversation) {
 };
 
 const commonResponse = function (conversation, courseSubject, courseNumber1, courseNumber2) {
-        const options = {
+    /* conversation.ask('I will talk to URI');
+    const options = {
             method: 'POST',
             header: {id: APIKey},
             json: true,
-            url: test,
-        }
-    request(options)
-        .then(function (response) {
+            uri: test,=
+        };
+    request(options, function(err, response, body) {
             // Request was successful, use the response object at will
-            console.log(response.statusCode); // 200
-            console.log(response.headers['content-type']);
-            if (response.statusCode === 200) {
+            if (!err || response.statusCode === 200) {
+                console.log(response.statusCode); // 200
+                console.log(response.headers['content-type']);
+                // Check URI's server
+                console.log(body);
                 conversation.ask('I Talked to URI');
-                // let response = JSON.parse(body);
             } else {
                 conversation.ask('I apologize but it appears the univeristy\'s servers are down.' +
                     'Please come back and try again later');
             }
-        })
-        .catch(function (err) {
-            // Something bad happened, handle the error
-            conversation.ask('Something bad happened.' +
-                'Please come back and try again later');
-        });
-    /*
+        }); */
+
 const courseCode = subjectTable[courseSubject];
 if (courseNumber1 === null) {
     conversation.ask('I will get information about ' +
@@ -103,7 +117,7 @@ if (courseNumber1 === null) {
         courseSubject + ' classes between ' + courseNumber1 + ' and '
         + courseNumber2 + '. Would you like to hear about another class?');
 }
-suggestionsAfter(conversation);*/
+    suggestionsAfter(conversation);
 };
 
 /* ###########################App Intents######################################## */
@@ -145,7 +159,12 @@ app.intent('actions_intent_PERMISSION', (conversation, params, permissionGranted
 
 
 app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => {
-    commonResponse(conversation, courseSubject, courseNumber1, null);
+    // Call the weather API
+    const APIResponse = callURIApi(courseSubject, courseNumber1, null);
+    console.log(APIResponse);
+    conversation.ask(JSON.stringify(APIResponse)); // Return the results of the weather API to Dialogflow
+    // conversation.ask('Please wait');
+    // commonResponse(conversation, courseSubject, courseNumber1, null);
 });
 
 app.intent('courses_in_a_subject', (conversation, {courseSubject}) => {
@@ -164,6 +183,12 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest(app);
 // Triggered when the user doesn't provide input to the Action
 app.intent('actions_intent_NO_INPUT', (conversation) => {
     // Use the number of reprompts to vary response
+    /* conversation.ask(new Randomization(
+        'What would you like to hear about?',
+        'Please say the name of a class or course number.',
+        'Sorry we\'re having trouble. Let\'s ' +
+        'try this again later. Goodbye.'
+    ));*/
     const repromptCount = parseInt(conversation.arguments.get('REPROMPT_COUNT'));
     if (repromptCount === 0) {
         conversation.ask('What would you like to hear about?');
