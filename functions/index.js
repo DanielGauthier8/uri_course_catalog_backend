@@ -1,4 +1,6 @@
 /* eslint-disable max-len */
+/* eslint-disable space-before-function-paren */
+
 // Copyright 2018, Google, Inc.
 // Licensed under the Apache License, Version 2.0 (the 'License');
 // you may not use this file except in compliance with the License.
@@ -22,60 +24,60 @@ const {
     Suggestions,
 } = require('actions-on-google');
 
-let output = 'nothing happened';
-
-
 // Import the firebase-functions package for deployment.
 const functions = require('firebase-functions');
 
-const request = require('request');
+const request = require('request-promise');
 
 // Instantiate the Dialogflow client
 const app = dialogflow({debug: true});
 
-// API keys
-const configuration = require('./configure/keys');
 // The Subjects and associated course code
 const subjectTable = require('./configure/subject_lookup');
 
+// API keys
+const configuration = require('./configure/keys');
 const APIKey = configuration.API_key;
 
-/* const baseURL = '';// 'https://api.uri.edu/v1/catalog/courses/';*/
+const baseURL = 'https://api.uri.edu/v1/catalog/courses/';
+
 const test = 'https://api.uri.edu/v1/catalog/courses/CSC/200';
 
+const options = {
+    method: 'GET',
+    headers: {
+        id: APIKey,
+    },
+    json: true,
+    url: test,
+};
 
 /* ###########################Helper Functions######################################## */
 
-function callURIApi(conversation, courseSubject, courseNumber1, courseNumber2) {
-    const options = {
-        method: 'GET',
-        headers: {
-            id: APIKey,
-        },
-        json: true,
-        url: test,
-    };
-    request(options, function (err, response, body) {
-        // Request was successful, use the response object at will
-        if (!err && response.statusCode === 200) {
-            // Check URI's server
-            output = 'I talked to URI!';
-            // Resolve the promise with the output text
-        } else if (!err && response.statusCode === 400) {
-            output = 'No credentials were supplied!';
-            console.log(response);
-        } else {
-            console.log(`Error calling the URI API: ${err}`)
-            output = 'I apologize but it appears the univeristy\'s servers are down.' +
-                'Please come back and try again later!';
-        }
-        if (response.statusCode !== null) {
-            console.log(body);
-        }
-        conversation.ask(output);
-        // console.log(output);
+const callURIApi = (courseSubject, courseNumber1, courseNumber2) => {
+    return new Promise((resolve) => {
+        let theResolution = '';
+        request(options, function (err, response, body) {
+            // Request was successful, use the response object at will
+            if (!err && response.statusCode === 200) {
+                // Check URI's server
+                theResolution = '<speak>' + 'I talked to <say-as interpret-as="characters">URI</say-as> on first try!' +
+                    '</speak>';
+                // Resolve the promise with the output text
+            } else if (!err && response.statusCode === 400) {
+                theResolution = 'No credentials were supplied!';
+                console.log(response);
+            } else {
+                console.log(`Error calling the URI API: ${err}`)
+                theResolution = 'I apologize but it appears the univeristy\'s servers are down.' +
+                    'Please come back and try again later!';
+            }
+            if (response.statusCode !== null) {
+                console.log(body);
+            }
+            resolve(theResolution);
+        });
     });
-    // return output;
 }
 
 const suggestionsAfter = function (conversation) {
@@ -84,42 +86,20 @@ const suggestionsAfter = function (conversation) {
 };
 
 const commonResponse = function (conversation, courseSubject, courseNumber1, courseNumber2) {
-    /* conversation.ask('I will talk to URI');
-    const options = {
-            method: 'POST',
-            header: {id: APIKey},
-            json: true,
-            uri: test,=
-        };
-    request(options, function(err, response, body) {
-            // Request was successful, use the response object at will
-            if (!err || response.statusCode === 200) {
-                console.log(response.statusCode); // 200
-                console.log(response.headers['content-type']);
-                // Check URI's server
-                console.log(body);
-                conversation.ask('I Talked to URI');
-            } else {
-                conversation.ask('I apologize but it appears the univeristy\'s servers are down.' +
-                    'Please come back and try again later');
-            }
-        }); */
-
-const courseCode = subjectTable[courseSubject];
-if (courseNumber1 === null) {
-    conversation.ask('I will get information about ' +
-        courseSubject + ' classes.' +
-        'Would you like to hear about another class?');
-} else if (courseNumber2 === null) {
-    conversation.ask('I will get information about ' +
-        courseSubject + ' ' + courseNumber1 + '. Also known as ' + courseCode +
-        '. Would you like to hear about another class?');
-} else {
-    conversation.ask('I will get information about ' +
-        courseSubject + ' classes between ' + courseNumber1 + ' and '
-        + courseNumber2 + '. Would you like to hear about another class?');
-}
-    suggestionsAfter(conversation);
+    const courseCode = subjectTable[courseSubject];
+    if (courseNumber1 === null) {
+        conversation.ask('I will get information about ' +
+            courseSubject + ' classes.' +
+            'Would you like to hear about another class?');
+    } else if (courseNumber2 === null) {
+        conversation.ask('I will get information about ' +
+            courseSubject + ' ' + courseNumber1 + '. Also known as ' + courseCode +
+            '. Would you like to hear about another class?');
+    } else {
+        conversation.ask('I will get information about ' +
+            courseSubject + ' classes between ' + courseNumber1 + ' and '
+            + courseNumber2 + '. Would you like to hear about another class?');
+    }
 };
 
 /* ###########################App Intents######################################## */
@@ -161,10 +141,13 @@ app.intent('actions_intent_PERMISSION', (conversation, params, permissionGranted
 
 
 app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => {
-    // Call the weather API
-    callURIApi(conversation, courseSubject, courseNumber1, null);
-    // conversation.ask('Please wait');
-    // commonResponse(conversation, courseSubject, courseNumber1, null);
+    // Call the API
+    return callURIApi(courseSubject, courseNumber1, null).then((outputText) => {
+        conversation.ask('<speak>' + 'Coming right up! <break time="2" />' + '</speak>');
+        conversation.ask(`${outputText}`);
+        conversation.ask(new Suggestions('Specific course', 'All courses in a subject'
+            , 'Courses within a range', 'No Thanks'));
+    });
 });
 
 app.intent('courses_in_a_subject', (conversation, {courseSubject}) => {
@@ -182,13 +165,6 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest(app);
 // Handle the Dialogflow NO_INPUT intent.
 // Triggered when the user doesn't provide input to the Action
 app.intent('actions_intent_NO_INPUT', (conversation) => {
-    // Use the number of reprompts to vary response
-    /* conversation.ask(new Randomization(
-        'What would you like to hear about?',
-        'Please say the name of a class or course number.',
-        'Sorry we\'re having trouble. Let\'s ' +
-        'try this again later. Goodbye.'
-    ));*/
     const repromptCount = parseInt(conversation.arguments.get('REPROMPT_COUNT'));
     if (repromptCount === 0) {
         conversation.ask('What would you like to hear about?');

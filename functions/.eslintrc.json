@@ -10,6 +10,7 @@
         "ignoreUrls": true
       }
     ],
+    "require-jsdoc": false,
     "space-before-function-paren": [
       "error",
       {
