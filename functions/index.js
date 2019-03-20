@@ -23,6 +23,9 @@ const {
     Permission,
     Suggestions,
     BasicCard,
+    Carousel,
+    Button,
+    BrowseCarouselItem,
     Image,
     SimpleResponse,
 } = require('actions-on-google');
@@ -44,6 +47,23 @@ const APIKey = configuration.API_key;
 
 const baseURL = 'https://api.uri.edu/v1/catalog/courses/';
 
+const pictureArr = ['https://farm2.staticflickr.com/1783/28368046617_efef15cc1b_z.jpg',
+    'https://farm4.staticflickr.com/3757/13898523014_da6dce1b5e_z.jpg',
+    'https://farm5.staticflickr.com/4845/46287975361_c23995f3a4_z.jpg',
+    'https://farm5.staticflickr.com/4902/45564398184_e1a5139a42_z.jpg',
+    'https://farm1.staticflickr.com/261/31750578890_7d0d009e36_z.jpg',
+    'https://farm1.staticflickr.com/305/31750567220_c262d8a2e4_z.jpg',
+    'https://farm1.staticflickr.com/767/31369620724_208ab67e3d_z.jpg',
+    'https://farm1.staticflickr.com/552/32007601851_c63f0afdbb_z.jpg',
+    'https://farm8.staticflickr.com/7455/16270728670_b6fca11c01_z.jpg',
+    'https://farm1.staticflickr.com/357/31977069912_efb2bf6b90_z.jpg',
+    'https://farm8.staticflickr.com/7445/16457238852_7b641ff858_z.jpg',
+    'https://farm9.staticflickr.com/8602/27691258664_e56f584cef_z.jpg',
+    'https://farm5.staticflickr.com/4826/45564403964_e7cc441e61_z.jpg',
+    'https://farm5.staticflickr.com/4902/46287974851_cd29a71c5a_z.jpg',
+    'https://farm5.staticflickr.com/4845/45564406104_9791a84fe8_z.jpg',
+    'https://farm5.staticflickr.com/4870/45564411094_09169f1113_z.jpg',
+    'https://farm5.staticflickr.com/4831/45564412494_cbe8174e8a_z.jpg']
 
 /* ###########################Helper Functions######################################## */
 const callURIApi = (courseSubject, courseNumber1, courseNumber2) => {
@@ -77,6 +97,22 @@ const callURIApi = (courseSubject, courseNumber1, courseNumber2) => {
         });
     });
 };
+
+let makeCarousel = function (outputText) {
+    let theArr = [];
+    for (let i = 0; i < theResponses.length; i++) {
+        theArr.push(new BrowseCarouselItem({
+            title: outputText[1].Long_Title,
+            description: outputText[1].Descr,
+            image: new Image({
+                url: pictureArr[Math.floor(Math.random() * pictureArr.length)],
+                alt: 'URI Picture',
+            }),
+            footer: 'Effective Date: ' + outputText[1].Eff_Date,
+        }));
+    }
+    return theArr;
+}
 
 const cleanResponse = function (theDescr) {
     theDescr = theDescr.substring(theDescr.indexOf(')') + 1, theDescr.length);
@@ -142,21 +178,63 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                     'class you are trying to find does not exist. Please try again.' + '</speak>');
             } else {
                 if (!conversation.screen) {
-                    conversation.ask('<speak>' + 'Now getting information about ' + outputText[0].Long_Title + '. <break time="2" /> ' + 'The course is about' +
-                        cleanResponse(otuputText[0].Descr) + ' The class is at least ' + outputText[0].Min_Units + ' credits.</speak>');
+                    conversation.ask('<speak>' + 'Now getting information about ' + outputText[0].Long_Title +
+                        '. <break time="2" /> ' + 'The course is about' + cleanResponse(otuputText[0].Descr) +
+                        ' The class is at least ' + outputText[0].Min_Units + ' credits.</speak>');
                     if (outputText.length > 1) {
-                        conversation.ask('<speak>' + 'There is also ' + outputText[1].Long_Title + ' under the same course code. This class is about' +
-                            outputText[1] + '</speak>');
+                        conversation.ask('<speak>' + 'There is also ' + outputText[1].Long_Title +
+                            ' under the same course code. This class is about' + outputText[1] + '</speak>.  Others may also exist');
                     }
                 } else {
-                    conversation.ask('Here you go.' + cleanResponse(outputText[0].Descr) + ' The class is at least ' + outputText[0].Min_Units + ' credits.'/* , new BasicCard({
-                    text: 'outputText[0].Descr',
-                    title: 'outputText[0].Long_Title',
-                    image: new Image({
-                        url: 'https://farm2.staticflickr.com/1783/28368046617_efef15cc1b_z.jpg',
-                        alt: 'URI Picture',
-                    }),
-                })*/);
+                    if (outputText.length === 1) {
+                        conversation.ask('Here you go.', new BasicCard({
+                            title: outputText[0].Long_Title,
+                            text: outputText[0].Descr,
+                            subtitle: outputText[0].College_Name,
+                            image: new Image({
+                                url: pictureArr[Math.floor(Math.random() * pictureArr.length)],
+                                alt: 'Picture of Kingston Campus',
+                            }),
+                            buttons: new Button({ // Wrapper for complex sub Objects
+                                title: 'e-Campus',
+                                url: 'https://web.uri.edu/ecampus/student-access/',
+                            }),
+                            display: 'CROPPED',
+                        }));
+                    } else {
+                        if (outputText[1].Catalog.includes('H') >= 1) {
+                            conversation.ask('Here you go.', new BasicCard({
+                                title: outputText[0].Long_Title,
+                                text: outputText[0].Descr + '  \n  \n **Honors Version:**  \n' + outputText[1].Descr,
+                                subtitle: outputText[0].College_Name,
+                                image: new Image({
+                                    url: pictureArr[Math.floor(Math.random() * pictureArr.length)],
+                                    alt: 'Picture of Kingston Campus',
+                                }),
+                                buttons: new Button({ // Wrapper for complex sub Objects
+                                    title: 'e-Campus',
+                                    url: 'https://web.uri.edu/ecampus/student-access/',
+                                }),
+                            }));
+                        } else {
+                            const callName = name.substring(0, name.indexOf(' '));
+                            conversation.ask('<speak>' + 'Hi again ' + callName + ', What do you want to look up?' + '</speak>');
+
+                            conversation.ask('Here you go.', new BasicCard({
+                                title: outputText[0].Long_Title,
+                                text: outputText[0].Descr + '  \n OTHER VERSIONS OF COURSES WITH THIS SAME COURSE CODE EXISTS',
+                                subtitle: outputText[0].College_Name,
+                                image: new Image({
+                                    url: pictureArr[Math.floor(Math.random() * pictureArr.length)],
+                                    alt: 'Picture of Kingston Campus',
+                                }),
+                                buttons: new Button({ // Wrapper for complex sub Objects
+                                    title: 'e-Campus',
+                                    url: 'https://web.uri.edu/ecampus/student-access/',
+                                }),
+                            }));
+                        }
+                    }
                 }
             }
             conversation.ask(new Suggestions('specific course'
@@ -169,11 +247,16 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
 
 
 app.intent('courses_in_a_range', (conversation, {courseSubject, courseNumber1, courseNumber2}) => {
+    // Flip the min and max search range if max is min and vice versa
     if (courseNumber1 >= 0 && courseNumber2 >= 0) {
         if (courseNumber2 < courseNumber1) {
             const temp = courseNumber2;
             courseNumber2 = courseNumber1;
             courseNumber1 = temp;
+        }
+        // Keep corse codes under 1000
+        if (courseNumber2 >= 1000) {
+            courseNumber2 = 999;
         }
         // Call the API
         return callURIApi(subjectTable[courseSubject], courseNumber1, courseNumber2).then((outputText) => {
