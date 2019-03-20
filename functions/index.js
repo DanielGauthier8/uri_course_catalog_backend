@@ -23,7 +23,7 @@ const {
     Permission,
     Suggestions,
     BasicCard,
-    Carousel,
+    BrowseCarousel,
     Button,
     BrowseCarouselItem,
     Image,
@@ -63,7 +63,7 @@ const pictureArr = ['https://farm2.staticflickr.com/1783/28368046617_efef15cc1b_
     'https://farm5.staticflickr.com/4902/46287974851_cd29a71c5a_z.jpg',
     'https://farm5.staticflickr.com/4845/45564406104_9791a84fe8_z.jpg',
     'https://farm5.staticflickr.com/4870/45564411094_09169f1113_z.jpg',
-    'https://farm5.staticflickr.com/4831/45564412494_cbe8174e8a_z.jpg']
+    'https://farm5.staticflickr.com/4831/45564412494_cbe8174e8a_z.jpg'];
 
 /* ###########################Helper Functions######################################## */
 const callURIApi = (courseSubject, courseNumber1, courseNumber2) => {
@@ -102,8 +102,8 @@ let makeCarousel = function (outputText) {
     let theArr = [];
     for (let i = 0; i < theResponses.length; i++) {
         theArr.push(new BrowseCarouselItem({
-            title: outputText[1].Long_Title,
-            description: outputText[1].Descr,
+            title: outputText[1].Catalog,
+            description: outputText[1].Long_Title,
             image: new Image({
                 url: pictureArr[Math.floor(Math.random() * pictureArr.length)],
                 alt: 'URI Picture',
@@ -111,8 +111,10 @@ let makeCarousel = function (outputText) {
             footer: 'Effective Date: ' + outputText[1].Eff_Date,
         }));
     }
-    return theArr;
-}
+    return new Carousel({
+        items: theArr,
+    });
+};
 
 const cleanResponse = function (theDescr) {
     theDescr = theDescr.substring(theDescr.indexOf(')') + 1, theDescr.length);
@@ -260,12 +262,33 @@ app.intent('courses_in_a_range', (conversation, {courseSubject, courseNumber1, c
         }
         // Call the API
         return callURIApi(subjectTable[courseSubject], courseNumber1, courseNumber2).then((outputText) => {
-                conversation.ask('<speak>' + 'Now getting information about ' + courseSubject + ' classes between ' + courseNumber1 + ' and ' + courseNumber2 + '. <break time="2" /> </speak>');
+                if (!conversation.screen) {
+                    conversation.ask('<speak>' + 'Now getting information about ' + outputText[0].FormalDesc + ' classes between ' + courseNumber1 + ' and ' + courseNumber2 + '. <break time="2" /> </speak>');
                 let listOfClasses = ' I will say the name of the course and then the course code.  Remember the course code if you want to look up more information on the class. ';
-                for (let i = 0; i < 5 && i < outputText.length; i++) {
-                    listOfClasses = listOfClasses + outputText[i].Long_Title + '<break time="500ms"/>: Course code is ' + outputText[i].FormalDesc + ' ' + outputText[i].Catalog + '. <break time="1" />';
-                }
+                    for (let i = 0; i < 5 && i < outputText.length; i++) {
+                        listOfClasses = listOfClasses + outputText[i].Long_Title + '<break time="500ms"/>: Course code is ' + outputText[i].FormalDesc + ' ' + outputText[i].Catalog + '. <break time="1" />';
+                    }
                 conversation.ask('<speak>' + listOfClasses + '</speak>');
+                } else {
+                    conversation.ask('<speak>' + 'Now getting information about ' + outputText[0].FormalDesc + ' classes between ' + courseNumber1 + ' and ' + courseNumber2 + '.  <break time="2" /> </speak>');
+                    let listOfClasses = '';
+                    for (let i = 0; i < outputText.length; i++) {
+                        listOfClasses = listOfClasses + '**' + outputText[i].Long_Title + '**: ' + outputText[i].FormalDesc + ' ' + outputText[i].Catalog + '  \n  \n';
+                    }
+                    conversation.ask(' Here you go.', new BasicCard({
+                        title: outputText[0].FormalDesc + ': ' + courseNumber1 + '-' + courseNumber2,
+                        text: listOfClasses,
+                        subtitle: outputText[0].College_Name,
+                        image: new Image({
+                            url: pictureArr[Math.floor(Math.random() * pictureArr.length)],
+                            alt: 'Picture of Kingston Campus',
+                        }),
+                        buttons: new Button({ // Wrapper for complex sub Objects
+                            title: 'e-Campus',
+                            url: 'https://web.uri.edu/ecampus/student-access/',
+                        }),
+                    }));
+                }
             }
         );
     } else {
