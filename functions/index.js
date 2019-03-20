@@ -16,13 +16,14 @@
 
 'use strict';
 
-// Import the Dialogflow module and response creation dependencies
+// Import the Dialogflow module and response dependencies
 // from the Actions on Google client library.
 const {
     dialogflow,
     Permission,
     Suggestions,
     BasicCard,
+    SimpleResponse,
 } = require('actions-on-google');
 
 // Import the firebase-functions package for deployment.
@@ -42,12 +43,8 @@ const APIKey = configuration.API_key;
 
 const baseURL = 'https://api.uri.edu/v1/catalog/courses/';
 
-const test = 'https://api.uri.edu/v1/catalog/courses/CSC/200';
-
-
 
 /* ###########################Helper Functions######################################## */
-
 const callURIApi = (courseSubject, courseNumber1, courseNumber2) => {
     const options = {
         method: 'GET',
@@ -64,25 +61,24 @@ const callURIApi = (courseSubject, courseNumber1, courseNumber2) => {
             if (!err && response.statusCode === 200) {
                 const numResponse = body.length;
                 if (numResponse === 0) {
-                    theResolution.push('<speak>' + courseSubject + '</speak>');
-                    theResolution.push('<speak>' + 'It appears that the ' +
-                        'class you are trying to find does not exist. Please try again.' + '</speak>');
+                    theResolution.push(courseSubject);
+                    theResolution.push('Something the university is not teaching. It appears that the ' +
+                        'class you are trying to find does not exist. Please try again.');
                 } else {
                     for (let i = 0; i < numResponse; i++) {
                         const theResponse = JSON.parse(JSON.stringify(body[i]));
-                        theResolution.push('<speak>' + theResponse.Long_Title + '</speak>');
-                        theResolution.push('<speak>' +
+                        theResolution.push(theResponse.Long_Title);
+                        theResolution.push(
                             theResponse.Descr.substring(
                                 theResponse.Descr.indexOf(')') + 1,
-                                theResponse.Descr.length) +
-                            '</speak>');
+                                theResponse.Descr.length));
                     }
                     // Resolve the promise with the output text
                 }
             } else {
                 console.log(`Error calling the URI API: ${err}`);
-                theResolution.push('<speak>' + 'I apologize but it appears the Univeristy\'s servers are down.' +
-                    'Please come back and try again later!' + '</speak>');
+                theResolution.push('I apologize but it appears the Univeristy\'s servers are down.' +
+                    'Please come back and try again later!');
             }
             if (response.statusCode !== null) {
                 console.log(JSON.stringify(body));
@@ -95,22 +91,6 @@ const callURIApi = (courseSubject, courseNumber1, courseNumber2) => {
 const suggestionsAfter = function (conversation) {
     conversation.ask(new Suggestions('Specific course', 'All courses in a subject'
         , 'Courses within a range', 'No Thanks'));
-};
-
-const commonResponse = function (conversation, courseSubject, courseNumber1, courseNumber2) {
-    if (courseNumber1 === null) {
-        conversation.ask('<speak>' + 'I will get information about ' +
-            courseSubject + ' classes.' +
-            'Would you like to hear about another class?' + '</speak>');
-    } else if (courseNumber2 === null) {
-        conversation.ask('<speak>' + 'I will get information about ' +
-            courseSubject + ' ' + courseNumber1 + '. Also known as ' + courseCode +
-            '. Would you like to hear about another class?' + '</speak>');
-    } else {
-        conversation.ask('<speak>' + 'I will get information about ' +
-            courseSubject + ' classes between ' + courseNumber1 + ' and '
-            + courseNumber2 + '. Would you like to hear about another class?' + '</speak>');
-    }
 };
 
 /* ###########################App Intents######################################## */
@@ -127,7 +107,10 @@ app.intent('Default Welcome Intent', (conversation) => {
             const callName = name.substring(0, name.indexOf(' '));
             conversation.ask('<speak>' + 'Hi again ' + callName + ', What do you want to look up?' + '</speak>');
         } else {
-            conversation.ask('<speak>' + 'Hi again ' + name + ', What do you want to look up?' + '</speak>');
+            conversation.ask(new SimpleResponse({
+                speech: '<speak>' + 'Hi again ' + name + ', What do you want to look up?' + '</speak>',
+                text: 'Welcome Back ' + name + '! I am looking forward to assisting you today is your quest of finding course information.',
+            }));
         }
         suggestionsAfter(conversation);
     }
@@ -155,79 +138,58 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
     // Call the API
     if (courseNumber1 >= 0) {
         return callURIApi(subjectTable[courseSubject], courseNumber1, '').then((outputText) => {
-            conversation.ask('<speak>' + 'Now getting information about' + outputText[0] + '<break time="2" /> ' + '</speak>');
-            conversation.ask('' + outputText[1]);
-            // Create a basic card
-            /* conversation.ask(new BasicCard({
-                text: outputText[1],
-                title: outputText[0],
-                image: new Image({
-                    url: 'https://farm2.staticflickr.com/1783/28368046617_efef15cc1b_z.jpg',
-                    alt: 'URI Picture',
-                }),
-            }));*/
+            if (!conversation.screen) {
+                conversation.ask('<speak>' + 'Now getting information about ' + outputText[0] + ' <break time="2" /> ' + '</speak>');
+                conversation.ask('<speak> The course is about ' + '' + outputText[1] + '</speak>');
+            } else {
+                conversation.ask('Here you go.' + outputText[1] /* , new BasicCard({
+                    text: 'outputText[1]',
+                    title: 'outputText[0]',
+                    image: new Image({
+                        url: 'https://farm2.staticflickr.com/1783/28368046617_efef15cc1b_z.jpg',
+                        alt: 'URI Picture',
+                    }),
+                })*/);
+            }
             conversation.ask(new Suggestions('Specific course', 'All courses in a subject'
                 , 'Courses within a range', 'No Thanks'));
         });
     } else {
-        conversation.ask('Course numbers should not be a negative number.  Please retry');
+        conversation.ask('Course numbers should not be a negative number.  Please try again.');
     }
 });
 
 app.intent('courses_in_a_subject', (conversation, {courseSubject}) => {
     // Call the API
-    if (courseNumber1 >= 0) {
         return callURIApi(subjectTable[courseSubject], '', '').then((outputText) => {
-            conversation.ask('<speak>' + 'Now getting information about' + outputText[0] + '<break time="2" /> ' + '</speak>');
+            conversation.ask('<speak>' + 'Now getting information about ' + courseSubject + ' classes <break time="2" /> ' + '</speak>');
             conversation.ask('' + outputText[1]);
-            // Create a basic card
-            /* conversation.ask(new BasicCard({
-                text: outputText[1],
-                title: outputText[0],
-                image: new Image({
-                    url: 'https://farm2.staticflickr.com/1783/28368046617_efef15cc1b_z.jpg',
-                    alt: 'URI Picture',
-                }),
-            }));*/
             conversation.ask(new Suggestions('Specific course', 'All courses in a subject'
                 , 'Courses within a range', 'No Thanks'));
         });
-    } else {
-        conversation.ask('Course numbers should not be a negative number.  Please retry');
-    }
 });
 
 app.intent('courses_in_a_range', (conversation, {courseSubject, courseNumber1, courseNumber2}) => {
-    // Call the API
     if (courseNumber1 >= 0 && courseNumber2 >= 0) {
         if (courseNumber2 > courseNumber1) {
             const temp = courseNumber2;
             courseNumber2 = courseNumber1;
             courseNumber1 = temp;
         }
+        // Call the API
         return callURIApi(subjectTable[courseSubject], courseNumber1, courseNumber2).then((outputText) => {
-            conversation.ask('<speak>' + 'Now getting information about' + outputText[0] + '<break time="2" /> ' + '</speak>');
+            conversation.ask('<speak>' + 'Now getting information about' + courseSubject + ' courses between' + courseNumber1 + ' and ' + courseNumber2 + '<break time="2" /> ' + '</speak>');
             conversation.ask('' + outputText[1]);
-            // Create a basic card
-            /* conversation.ask(new BasicCard({
-                text: outputText[1],
-                title: outputText[0],
-                image: new Image({
-                    url: 'https://farm2.staticflickr.com/1783/28368046617_efef15cc1b_z.jpg',
-                    alt: 'URI Picture',
-                }),
-            }));*/
             conversation.ask(new Suggestions('Specific course', 'All courses in a subject'
                 , 'Courses within a range', 'No Thanks'));
         });
     } else {
-        conversation.ask('Course numbers should not be a negative number.  Please retry');
+        conversation.ask(new SimpleResponse({
+            speech: 'It appears the number you gave was negative.  Please retry.',
+            text: 'Course numbers should not be a negative number.  Please retry\'',
+        }));
     }
 });
-
-
-// Set the DialogflowApp object to handle the HTTPS POST request.
-exports.dialogflowFirebaseFulfillment = functions.https.onRequest(app);
 
 // Handle the Dialogflow NO_INPUT intent.
 // Triggered when the user doesn't provide input to the Action
@@ -242,3 +204,6 @@ app.intent('actions_intent_NO_INPUT', (conversation) => {
             'try this again later. Goodbye.' + '</speak>');
     }
 });
+
+// Set the DialogflowApp object to handle the HTTPS POST request.
+exports.dialogflowFirebaseFulfillment = functions.https.onRequest(app);
