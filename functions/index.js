@@ -22,6 +22,7 @@ const {
     dialogflow,
     Permission,
     Suggestions,
+    BasicCard,
 } = require('actions-on-google');
 
 // Import the firebase-functions package for deployment.
@@ -43,39 +44,53 @@ const baseURL = 'https://api.uri.edu/v1/catalog/courses/';
 
 const test = 'https://api.uri.edu/v1/catalog/courses/CSC/200';
 
-const options = {
-    method: 'GET',
-    headers: {
-        id: APIKey,
-    },
-    json: true,
-    url: test,
-};
+
 
 /* ###########################Helper Functions######################################## */
 
 const callURIApi = (courseSubject, courseNumber1, courseNumber2) => {
+    const options = {
+        method: 'GET',
+        headers: {
+            id: APIKey,
+        },
+        json: true,
+        url: baseURL + courseSubject + '/' + courseNumber1 + '/' + courseNumber2,
+    };
     return new Promise((resolve) => {
-        let theResolution = '';
+        let theResolution = [];
         request(options, function (err, response, body) {
             // Request was successful, use the response object at will
             if (!err && response.statusCode === 200) {
-                // Check URI's server
-                theResolution = '<speak>' + 'I talked to <say-as interpret-as="characters">URI</say-as> on first try...' +
-                    '</speak>';
-                // Resolve the promise with the output text
+                const numResponse = body.length;
+                if (numResponse === 0) {
+                    theResolution.push('<speak>' + courseSubject + '</speak>');
+                    theResolution.push('<speak>' + 'It appears that the ' +
+                        'class you are trying to find does not exist. Please try again.' + '</speak>');
+                } else {
+                    for (let i = 0; i < numResponse; i++) {
+                        const theResponse = JSON.parse(JSON.stringify(body[i]));
+                        theResolution.push('<speak>' + theResponse.Long_Title + '</speak>');
+                        theResolution.push('<speak>' +
+                            theResponse.Descr.substring(
+                                theResponse.Descr.indexOf(')') + 1,
+                                theResponse.Descr.length) +
+                            '</speak>');
+                    }
+                    // Resolve the promise with the output text
+                }
             } else {
-                console.log(`Error calling the URI API: ${err}`)
-                theResolution = '<speak>' + 'I apologize but it appears the univeristy\'s servers are down.' +
-                    'Please come back and try again later!' + '</speak>';
+                console.log(`Error calling the URI API: ${err}`);
+                theResolution.push('<speak>' + 'I apologize but it appears the Univeristy\'s servers are down.' +
+                    'Please come back and try again later!' + '</speak>');
             }
             if (response.statusCode !== null) {
-                console.log(body);
+                console.log(JSON.stringify(body));
             }
             resolve(theResolution);
         });
     });
-}
+};
 
 const suggestionsAfter = function (conversation) {
     conversation.ask(new Suggestions('Specific course', 'All courses in a subject'
@@ -83,7 +98,6 @@ const suggestionsAfter = function (conversation) {
 };
 
 const commonResponse = function (conversation, courseSubject, courseNumber1, courseNumber2) {
-    const courseCode = subjectTable[courseSubject];
     if (courseNumber1 === null) {
         conversation.ask('<speak>' + 'I will get information about ' +
             courseSubject + ' classes.' +
@@ -139,20 +153,76 @@ app.intent('actions_intent_PERMISSION', (conversation, params, permissionGranted
 
 app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => {
     // Call the API
-    return callURIApi(courseSubject, courseNumber1, null).then((outputText) => {
-        conversation.ask('<speak>' + 'Coming right up! <break time="2" />' + '</speak>');
-        conversation.ask(outputText);
-        conversation.ask(new Suggestions('Specific course', 'All courses in a subject'
-            , 'Courses within a range', 'No Thanks'));
-    });
+    if (courseNumber1 >= 0) {
+        return callURIApi(subjectTable[courseSubject], courseNumber1, '').then((outputText) => {
+            conversation.ask('<speak>' + 'Now getting information about' + outputText[0] + '<break time="2" /> ' + '</speak>');
+            conversation.ask('' + outputText[1]);
+            // Create a basic card
+            /* conversation.ask(new BasicCard({
+                text: outputText[1],
+                title: outputText[0],
+                image: new Image({
+                    url: 'https://farm2.staticflickr.com/1783/28368046617_efef15cc1b_z.jpg',
+                    alt: 'URI Picture',
+                }),
+            }));*/
+            conversation.ask(new Suggestions('Specific course', 'All courses in a subject'
+                , 'Courses within a range', 'No Thanks'));
+        });
+    } else {
+        conversation.ask('Course numbers should not be a negative number.  Please retry');
+    }
 });
 
 app.intent('courses_in_a_subject', (conversation, {courseSubject}) => {
-    commonResponse(conversation, courseSubject, null, null);
+    // Call the API
+    if (courseNumber1 >= 0) {
+        return callURIApi(subjectTable[courseSubject], '', '').then((outputText) => {
+            conversation.ask('<speak>' + 'Now getting information about' + outputText[0] + '<break time="2" /> ' + '</speak>');
+            conversation.ask('' + outputText[1]);
+            // Create a basic card
+            /* conversation.ask(new BasicCard({
+                text: outputText[1],
+                title: outputText[0],
+                image: new Image({
+                    url: 'https://farm2.staticflickr.com/1783/28368046617_efef15cc1b_z.jpg',
+                    alt: 'URI Picture',
+                }),
+            }));*/
+            conversation.ask(new Suggestions('Specific course', 'All courses in a subject'
+                , 'Courses within a range', 'No Thanks'));
+        });
+    } else {
+        conversation.ask('Course numbers should not be a negative number.  Please retry');
+    }
 });
 
 app.intent('courses_in_a_range', (conversation, {courseSubject, courseNumber1, courseNumber2}) => {
-    commonResponse(conversation, courseSubject, courseNumber1, courseNumber2);
+    // Call the API
+    if (courseNumber1 >= 0 && courseNumber2 >= 0) {
+        if (courseNumber2 > courseNumber1) {
+            const temp = courseNumber2;
+            courseNumber2 = courseNumber1;
+            courseNumber1 = temp;
+        }
+        return callURIApi(subjectTable[courseSubject], courseNumber1, courseNumber2).then((outputText) => {
+            conversation.ask('<speak>' + 'Now getting information about' + outputText[0] + '<break time="2" /> ' + '</speak>');
+            conversation.ask('' + outputText[1]);
+            // Create a basic card
+            /* conversation.ask(new BasicCard({
+                text: outputText[1],
+                title: outputText[0],
+                image: new Image({
+                    url: 'https://farm2.staticflickr.com/1783/28368046617_efef15cc1b_z.jpg',
+                    alt: 'URI Picture',
+                }),
+            }));*/
+            conversation.ask(new Suggestions('Specific course', 'All courses in a subject'
+                , 'Courses within a range', 'No Thanks'));
+        });
+    } else {
+        conversation.ask('Course numbers should not be a negative number.  Please retry');
+    }
 });
 
 
