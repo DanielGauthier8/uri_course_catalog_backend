@@ -23,6 +23,7 @@ const {
     Permission,
     Suggestions,
     BasicCard,
+    Image,
     SimpleResponse,
 } = require('actions-on-google');
 
@@ -60,37 +61,35 @@ const callURIApi = (courseSubject, courseNumber1, courseNumber2) => {
             // Request was successful, use the response object at will
             if (!err && response.statusCode === 200) {
                 const numResponse = body.length;
-                if (numResponse === 0) {
-                    theResolution.push(courseSubject);
-                    theResolution.push('Something the university is not teaching. It appears that the ' +
-                        'class you are trying to find does not exist. Please try again.');
-                } else {
+                if (numResponse >= 1) {
                     for (let i = 0; i < numResponse; i++) {
                         const theResponse = JSON.parse(JSON.stringify(body[i]));
-                        theResolution.push(theResponse.Long_Title);
-                        theResolution.push(
-                            theResponse.Descr.substring(
-                                theResponse.Descr.indexOf(')') + 1,
-                                theResponse.Descr.length));
+                        theResolution.push(theResponse);
                     }
-                    // Resolve the promise with the output text
                 }
             } else {
                 console.log(`Error calling the URI API: ${err}`);
-                theResolution.push('I apologize but it appears the Univeristy\'s servers are down.' +
-                    'Please come back and try again later!');
             }
-            if (response.statusCode !== null) {
+            /* if (response.statusCode !== null) {
                 console.log(JSON.stringify(body));
-            }
+            }*/
             resolve(theResolution);
         });
     });
 };
 
+const cleanResponse = function (theDescr) {
+    theDescr = theDescr.substring(theDescr.indexOf(')') + 1, theDescr.length);
+    theDescr = theDescr.replace(/lec. /gi, 'Lecture. ');
+    theDescr = theDescr.replace(/ crs./gi, ' Credits');
+    theDescr = theDescr.replace(/pre:/gi, ' Prerequisites:');
+    theDescr = theDescr.replace(/c-/gi, 'C minus');
+
+    return theDescr;
+};
+
 const suggestionsAfter = function (conversation) {
-    conversation.ask(new Suggestions('Specific course', 'All courses in a subject'
-        , 'Courses within a range', 'No Thanks'));
+    conversation.ask(new Suggestions('specific course', 'courses within a range', 'no thanks'));
 };
 
 /* ###########################App Intents######################################## */
@@ -108,8 +107,8 @@ app.intent('Default Welcome Intent', (conversation) => {
             conversation.ask('<speak>' + 'Hi again ' + callName + ', What do you want to look up?' + '</speak>');
         } else {
             conversation.ask(new SimpleResponse({
-                speech: '<speak>' + 'Hi again ' + name + ', What do you want to look up?' + '</speak>',
-                text: 'Welcome Back ' + name + '! I am looking forward to assisting you today is your quest of finding course information.',
+                speech: '<speak>' + 'Welcome Back ' + name + ', What do you want to look up?' + '</speak>',
+                text: 'Welcome Back ' + name + '! I am looking forward to assisting you today with your quest of finding course information.',
             }));
         }
         suggestionsAfter(conversation);
@@ -138,51 +137,54 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
     // Call the API
     if (courseNumber1 >= 0) {
         return callURIApi(subjectTable[courseSubject], courseNumber1, '').then((outputText) => {
-            if (!conversation.screen) {
-                conversation.ask('<speak>' + 'Now getting information about ' + outputText[0] + ' <break time="2" /> ' + '</speak>');
-                conversation.ask('<speak> The course is about ' + '' + outputText[1] + '</speak>');
+            if (outputText.length === 0) {
+                conversation.ask('<speak>' + 'You are trying to find something the university is not teaching. It appears that the ' +
+                    'class you are trying to find does not exist. Please try again.' + '</speak>');
             } else {
-                conversation.ask('Here you go.' + outputText[1] /* , new BasicCard({
-                    text: 'outputText[1]',
-                    title: 'outputText[0]',
+                if (!conversation.screen) {
+                    conversation.ask('<speak>' + 'Now getting information about ' + outputText[0].Long_Title + '. <break time="2" /> ' + 'The course is about' +
+                        cleanResponse(otuputText[0].Descr) + ' The class is at least ' + outputText[0].Min_Units + ' credits.</speak>');
+                    if (outputText.length > 1) {
+                        conversation.ask('<speak>' + 'There is also ' + outputText[1].Long_Title + ' under the same course code. This class is about' +
+                            outputText[1] + '</speak>');
+                    }
+                } else {
+                    conversation.ask('Here you go.' + cleanResponse(outputText[0].Descr) + ' The class is at least ' + outputText[0].Min_Units + ' credits.'/* , new BasicCard({
+                    text: 'outputText[0].Descr',
+                    title: 'outputText[0].Long_Title',
                     image: new Image({
                         url: 'https://farm2.staticflickr.com/1783/28368046617_efef15cc1b_z.jpg',
                         alt: 'URI Picture',
                     }),
                 })*/);
+                }
             }
-            conversation.ask(new Suggestions('Specific course', 'All courses in a subject'
-                , 'Courses within a range', 'No Thanks'));
+            conversation.ask(new Suggestions('specific course'
+                , 'courses within a range', 'no thanks'));
         });
     } else {
         conversation.ask('Course numbers should not be a negative number.  Please try again.');
     }
 });
 
-app.intent('courses_in_a_subject', (conversation, {courseSubject}) => {
-    // Call the API
-        return callURIApi(subjectTable[courseSubject], '', '').then((outputText) => {
-            conversation.ask('<speak>' + 'Now getting information about ' + courseSubject + ' classes <break time="2" /> ' + '</speak>');
-            conversation.ask('' + outputText[1]);
-            conversation.ask(new Suggestions('Specific course', 'All courses in a subject'
-                , 'Courses within a range', 'No Thanks'));
-        });
-});
 
 app.intent('courses_in_a_range', (conversation, {courseSubject, courseNumber1, courseNumber2}) => {
     if (courseNumber1 >= 0 && courseNumber2 >= 0) {
-        if (courseNumber2 > courseNumber1) {
+        if (courseNumber2 < courseNumber1) {
             const temp = courseNumber2;
             courseNumber2 = courseNumber1;
             courseNumber1 = temp;
         }
         // Call the API
         return callURIApi(subjectTable[courseSubject], courseNumber1, courseNumber2).then((outputText) => {
-            conversation.ask('<speak>' + 'Now getting information about' + courseSubject + ' courses between' + courseNumber1 + ' and ' + courseNumber2 + '<break time="2" /> ' + '</speak>');
-            conversation.ask('' + outputText[1]);
-            conversation.ask(new Suggestions('Specific course', 'All courses in a subject'
-                , 'Courses within a range', 'No Thanks'));
-        });
+                conversation.ask('<speak>' + 'Now getting information about ' + courseSubject + ' classes between ' + courseNumber1 + ' and ' + courseNumber2 + '. <break time="2" /> </speak>');
+                let listOfClasses = ' I will say the name of the course and then the course code.  Remember the course code if you want to look up more information on the class. ';
+                for (let i = 0; i < 5 && i < outputText.length; i++) {
+                    listOfClasses = listOfClasses + outputText[i].Long_Title + '<break time="500ms"/>: Course code is ' + outputText[i].FormalDesc + ' ' + outputText[i].Catalog + '. <break time="1" />';
+                }
+                conversation.ask('<speak>' + listOfClasses + '</speak>');
+            }
+        );
     } else {
         conversation.ask(new SimpleResponse({
             speech: 'It appears the number you gave was negative.  Please retry.',
