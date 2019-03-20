@@ -23,9 +23,7 @@ const {
     Permission,
     Suggestions,
     BasicCard,
-    BrowseCarousel,
     Button,
-    BrowseCarouselItem,
     Image,
     SimpleResponse,
 } = require('actions-on-google');
@@ -98,30 +96,14 @@ const callURIApi = (courseSubject, courseNumber1, courseNumber2) => {
     });
 };
 
-let makeCarousel = function (outputText) {
-    let theArr = [];
-    for (let i = 0; i < theResponses.length; i++) {
-        theArr.push(new BrowseCarouselItem({
-            title: outputText[1].Catalog,
-            description: outputText[1].Long_Title,
-            image: new Image({
-                url: pictureArr[Math.floor(Math.random() * pictureArr.length)],
-                alt: 'URI Picture',
-            }),
-            footer: 'Effective Date: ' + outputText[1].Eff_Date,
-        }));
-    }
-    return new Carousel({
-        items: theArr,
-    });
-};
-
 const cleanResponse = function (theDescr) {
     theDescr = theDescr.substring(theDescr.indexOf(')') + 1, theDescr.length);
     theDescr = theDescr.replace(/lec. /gi, 'Lecture. ');
     theDescr = theDescr.replace(/ crs./gi, ' Credits');
     theDescr = theDescr.replace(/pre:/gi, ' Prerequisites:');
     theDescr = theDescr.replace(/c-/gi, 'C minus');
+    theDescr = theDescr.replace(/c+/gi, 'C plus');
+
 
     return theDescr;
 };
@@ -197,7 +179,7 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                                 url: pictureArr[Math.floor(Math.random() * pictureArr.length)],
                                 alt: 'Picture of Kingston Campus',
                             }),
-                            buttons: new Button({ // Wrapper for complex sub Objects
+                            buttons: new Button({
                                 title: 'e-Campus',
                                 url: 'https://web.uri.edu/ecampus/student-access/',
                             }),
@@ -213,7 +195,7 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                                     url: pictureArr[Math.floor(Math.random() * pictureArr.length)],
                                     alt: 'Picture of Kingston Campus',
                                 }),
-                                buttons: new Button({ // Wrapper for complex sub Objects
+                                buttons: new Button({
                                     title: 'e-Campus',
                                     url: 'https://web.uri.edu/ecampus/student-access/',
                                 }),
@@ -230,7 +212,7 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                                     url: pictureArr[Math.floor(Math.random() * pictureArr.length)],
                                     alt: 'Picture of Kingston Campus',
                                 }),
-                                buttons: new Button({ // Wrapper for complex sub Objects
+                                buttons: new Button({
                                     title: 'e-Campus',
                                     url: 'https://web.uri.edu/ecampus/student-access/',
                                 }),
@@ -273,7 +255,7 @@ app.intent('courses_in_a_range', (conversation, {courseSubject, courseNumber1, c
                     conversation.ask('<speak>' + 'Now getting information about ' + outputText[0].FormalDesc + ' classes between ' + courseNumber1 + ' and ' + courseNumber2 + '.  <break time="2" /> </speak>');
                     let listOfClasses = '';
                     for (let i = 0; i < outputText.length; i++) {
-                        listOfClasses = listOfClasses + '**' + outputText[i].Long_Title + '**: ' + outputText[i].FormalDesc + ' ' + outputText[i].Catalog + '  \n  \n';
+                        listOfClasses = listOfClasses + '**' + outputText[i].Long_Title + '**: ' + outputText[i].Subject + ' ' + outputText[i].Catalog + '  \n  \n';
                     }
                     conversation.ask(' Here you go.', new BasicCard({
                         title: outputText[0].FormalDesc + ': ' + courseNumber1 + '-' + courseNumber2,
@@ -283,7 +265,7 @@ app.intent('courses_in_a_range', (conversation, {courseSubject, courseNumber1, c
                             url: pictureArr[Math.floor(Math.random() * pictureArr.length)],
                             alt: 'Picture of Kingston Campus',
                         }),
-                        buttons: new Button({ // Wrapper for complex sub Objects
+                        buttons: new Button({
                             title: 'e-Campus',
                             url: 'https://web.uri.edu/ecampus/student-access/',
                         }),
