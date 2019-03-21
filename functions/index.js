@@ -102,8 +102,6 @@ const cleanResponse = function (theDescr) {
     theDescr = theDescr.replace(/ crs./gi, ' Credits');
     theDescr = theDescr.replace(/pre:/gi, ' Prerequisites:');
     theDescr = theDescr.replace(/c-/gi, 'C minus');
-    theDescr = theDescr.replace(/c+/gi, 'C plus');
-
 
     return theDescr;
 };
@@ -122,15 +120,21 @@ app.intent('Default Welcome Intent', (conversation) => {
             permissions: 'NAME',
         }));
     } else {
+        let fName;
         if (name.includes(' ') >= 1) {
-            const callName = name.substring(0, name.indexOf(' '));
-            conversation.ask('<speak>' + 'Hi again ' + callName + ', What do you want to look up?' + '</speak>');
+            fName = name.substring(0, name.indexOf(' '));
         } else {
-            conversation.ask(new SimpleResponse({
-                speech: '<speak>' + 'Welcome Back ' + name + ', What do you want to look up?' + '</speak>',
-                text: 'Welcome Back ' + name + '! I am looking forward to assisting you today with your quest of finding course information.',
-            }));
+            fName = name;
         }
+        conversation.ask(new SimpleResponse({
+            speech: '<speak>' + 'Welcome Back ' + fName + '! I am looking forward to assisting you with ' +
+                'your quest to find course information. You can say things such as, look up math 141, or ' +
+                'search for a computer science course between 200 and 300.  I can understand complex sentences, as well as ask for ' +
+                'information you may have not included. In addition to course information, I can answer common frequently asked questions about <say-as interpret-as="characters">URI</say-as>' + '</speak>',
+            text: 'Welcome Back ' + fName + '.  \nWhat can I help you with? You can do things such as look up a specific course, or ' +
+                'search for a course by course number range.  I can understand complex sentences as well, such as: ' +
+                '"lookup all 300 level writing courses"',
+        }));
         suggestionsAfter(conversation);
     }
 });
@@ -163,7 +167,7 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
             } else {
                 if (!conversation.screen) {
                     conversation.ask('<speak>' + 'Now getting information about ' + outputText[0].Long_Title +
-                        '. <break time="2" /> ' + 'The course is about' + cleanResponse(otuputText[0].Descr) +
+                        '. <break time="2" /> ' + 'The course is about' + cleanResponse(outputText[0].Descr) +
                         ' The class is at least ' + outputText[0].Min_Units + ' credits.</speak>');
                     if (outputText.length > 1) {
                         conversation.ask('<speak>' + 'There is also ' + outputText[1].Long_Title +
@@ -171,7 +175,7 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                     }
                 } else {
                     if (outputText.length === 1) {
-                        conversation.ask('Here you go.', new BasicCard({
+                        conversation.ask('Here is information about ' + outputText[0].Long_Title, new BasicCard({
                             title: outputText[0].Long_Title,
                             text: outputText[0].Descr,
                             subtitle: outputText[0].College_Name,
@@ -187,7 +191,7 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                         }));
                     } else {
                         if (outputText[1].Catalog.includes('H') >= 1) {
-                            conversation.ask('Here you go.', new BasicCard({
+                            conversation.ask('Here is information about ' + outputText[0].Long_Title, new BasicCard({
                                 title: outputText[0].Long_Title,
                                 text: outputText[0].Descr + '  \n  \n **Honors Version:**  \n' + outputText[1].Descr,
                                 subtitle: outputText[0].College_Name,
@@ -204,7 +208,7 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                             const callName = name.substring(0, name.indexOf(' '));
                             conversation.ask('<speak>' + 'Hi again ' + callName + ', What do you want to look up?' + '</speak>');
 
-                            conversation.ask('Here you go.', new BasicCard({
+                            conversation.ask('Here is information about ' + outputText[0].Long_Title, new BasicCard({
                                 title: outputText[0].Long_Title,
                                 text: outputText[0].Descr + '  \n OTHER VERSIONS OF COURSES WITH THIS SAME COURSE CODE EXISTS',
                                 subtitle: outputText[0].College_Name,
@@ -230,7 +234,10 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
 });
 
 
-app.intent('courses_in_a_range', (conversation, {courseSubject, courseNumber1, courseNumber2}) => {
+app.intent(['courses_at_a_level', 'courses_in_a_range'], (conversation, {courseSubject, courseNumber1, courseNumber2}) => {
+    if (courseNumber2 === undefined || courseNumber2 === null) {
+        courseNumber2 = parseInt(courseNumber1) + 100;
+    }
     // Flip the min and max search range if max is min and vice versa
     if (courseNumber1 >= 0 && courseNumber2 >= 0) {
         if (courseNumber2 < courseNumber1) {
@@ -281,18 +288,8 @@ app.intent('courses_in_a_range', (conversation, {courseSubject, courseNumber1, c
     }
 });
 
-// Handle the Dialogflow NO_INPUT intent.
-// Triggered when the user doesn't provide input to the Action
-app.intent('actions_intent_NO_INPUT', (conversation) => {
-    const repromptCount = parseInt(conversation.arguments.get('REPROMPT_COUNT'));
-    if (repromptCount === 0) {
-        conversation.ask('<speak>' + 'What would you like to hear about?' + '</speak>');
-    } else if (repromptCount === 1) {
-        conversation.ask('<speak>' + 'Please say the name of a class or course number.' + '</speak>');
-    } else if (conversation.arguments.get('IS_FINAL_REPROMPT')) {
-        conversation.close('<speak>' + 'Sorry we\'re having trouble. Let\'s ' +
-            'try this again later. Goodbye.' + '</speak>');
-    }
+app.intent(['course_specific-no', 'courses_at_a_level-no', 'courses_in_a_range-no'], (conv) => {
+    conv.close('Let me know when you want to talk about classes again!');
 });
 
 // Set the DialogflowApp object to handle the HTTPS POST request.
