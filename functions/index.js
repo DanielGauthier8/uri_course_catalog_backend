@@ -23,6 +23,8 @@ const {
     Permission,
     Suggestions,
     BasicCard,
+    BrowseCarousel,
+    BrowseCarouselItem,
     Button,
     Image,
     SimpleResponse,
@@ -131,8 +133,8 @@ app.intent('Default Welcome Intent', (conversation) => {
                 'your quest to find course information. You can say things such as, look up math 141, or ' +
                 'search for a computer science course between 200 and 300.  I can understand complex sentences, as ' +
                 'well as ask for information you may have not included. <break time="500ms" /> In addition to course information, I can' +
-                ' answer common frequently asked questions about <say-as interpret-as="characters">URI</say-as>. <break time="900ms" />' +
-                ' What can I help you with?</speak>',
+                ' answer common frequently asked questions about <say-as interpret-as="characters">URI</say-as> <break time="900ms" />' +
+                '. What can I help you with?</speak>',
             text: 'Welcome Back ' + fName + '.  \n You can do things such as look up a specific course, or ' +
                 'search for a course by course number range.  I can understand complex sentences as well, such as: ' +
                 '"lookup all 300 level writing courses".  \nWhat can I help you with?',
@@ -288,9 +290,51 @@ app.intent(['courses_at_a_level', 'courses_in_a_range'], (conversation, {courseS
     }
 });
 
-app.intent(['course_specific-no', 'courses_at_a_level-no', 'courses_in_a_range-no'], (conv) => {
-    conv.close('Let me know when you want to talk about classes again!');
+app.intent(['course_specific-no', 'courses_at_a_level-no', 'courses_in_a_range-no'], (conversation) => {
+    conversation.close('Let me know when you want to talk about classes again!');
 });
+
+app.intent('sources', (conversation) => {
+    // if (!conversation.screen) {
+    conversation.ask(new SimpleResponse({
+        speech: '<speak>' + 'I get all of my course information from the  ' +
+            '<say-as interpret-as="characters">URI</say-as> e-Campus  <say-as interpret-as="characters">API</say-as> ' +
+            'found at  <say-as interpret-as="characters">API</say-as> dot  <say-as interpret-as="characters">URI</say-as> dot ' +
+            ' <say-as interpret-as="characters">EDU</say-as>.  I get my pictures from  <say-as interpret-' +
+            'as="characters">URI</say-as>\'s public flickr account, and I answer  <say-as interpret-as=' +
+            '"characters">FAQ</say-as> based of of many live  <say-as interpret-as="characters">FAQ</say-as> ' +
+            'pages on the  <say-as interpret-as="characters">URI</say-as> website.' + '</speak>',
+        text: 'I get all of my course information from the URI e-Campus API found at api.uri.edu.  I get my pictures' +
+            ' from  URI\'s public flickr account, and I answer  FAQ based of of many live pages on the URI website.',
+    }));
+    conversation.ask();
+});
+/* conversation.ask(new BrowseCarousel({
+    items: [
+        new BrowseCarouselItem({
+            title: 'Images Source',
+            url: 'https://www.flickr.com/photos/universityofrhodeisland/albums/72157644059272895/with/31284649924/',
+            description: 'URI\'s public flickr account',
+        }),
+        new BrowseCarouselItem({
+            title: 'Course Information',
+            url: 'https://api.uri.edu/#/',
+            description: 'The e-Campus API',
+        }),
+        new BrowseCarouselItem({
+            title: 'Project Advisor',
+            url: 'https://www.linkedin.com/in/david-brown-b3946a10/',
+            description: 'URI Lecturer David Brown',
+        }),
+        new BrowseCarouselItem({
+            title: 'FAQ Information',
+            url: 'https://www.web.uri.edu/',
+            description: 'URI\'s main website',
+        }),
+    ],
+}));
+});*/
+
 
 // Set the DialogflowApp object to handle the HTTPS POST request.
 exports.dialogflowFirebaseFulfillment = functions.https.onRequest(app);
