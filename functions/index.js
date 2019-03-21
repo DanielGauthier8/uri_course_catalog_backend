@@ -127,13 +127,15 @@ app.intent('Default Welcome Intent', (conversation) => {
             fName = name;
         }
         conversation.ask(new SimpleResponse({
-            speech: '<speak>' + 'Welcome Back ' + fName + '! I am looking forward to assisting you with ' +
+            speech: '<speak>' + 'Welcome Back ' + fName + '! <break time="10ms" /> I am looking forward to assisting you with ' +
                 'your quest to find course information. You can say things such as, look up math 141, or ' +
-                'search for a computer science course between 200 and 300.  I can understand complex sentences, as well as ask for ' +
-                'information you may have not included. In addition to course information, I can answer common frequently asked questions about <say-as interpret-as="characters">URI</say-as>' + '</speak>',
-            text: 'Welcome Back ' + fName + '.  \nWhat can I help you with? You can do things such as look up a specific course, or ' +
+                'search for a computer science course between 200 and 300.  I can understand complex sentences, as ' +
+                'well as ask for information you may have not included. <break time="500ms" /> In addition to course information, I can' +
+                ' answer common frequently asked questions about <say-as interpret-as="characters">URI</say-as>. <break time="900ms" />' +
+                ' What can I help you with?</speak>',
+            text: 'Welcome Back ' + fName + '.  \n You can do things such as look up a specific course, or ' +
                 'search for a course by course number range.  I can understand complex sentences as well, such as: ' +
-                '"lookup all 300 level writing courses"',
+                '"lookup all 300 level writing courses".  \nWhat can I help you with?',
         }));
         suggestionsAfter(conversation);
     }
@@ -175,7 +177,7 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                     }
                 } else {
                     if (outputText.length === 1) {
-                        conversation.ask('Here is information about ' + outputText[0].Long_Title, new BasicCard({
+                        conversation.ask('Here is information about ' + outputText[0].Long_Title + '. ', new BasicCard({
                             title: outputText[0].Long_Title,
                             text: outputText[0].Descr,
                             subtitle: outputText[0].College_Name,
@@ -188,10 +190,10 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                                 url: 'https://web.uri.edu/ecampus/student-access/',
                             }),
                             display: 'CROPPED',
-                        }));
+                        }), 'Can I help you with anything else?');
                     } else {
                         if (outputText[1].Catalog.includes('H') >= 1) {
-                            conversation.ask('Here is information about ' + outputText[0].Long_Title, new BasicCard({
+                            conversation.ask('Here is information about ' + outputText[0].Long_Title + '. ', new BasicCard({
                                 title: outputText[0].Long_Title,
                                 text: outputText[0].Descr + '  \n  \n **Honors Version:**  \n' + outputText[1].Descr,
                                 subtitle: outputText[0].College_Name,
@@ -203,12 +205,9 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                                     title: 'e-Campus',
                                     url: 'https://web.uri.edu/ecampus/student-access/',
                                 }),
-                            }));
+                            }), 'Can I help you with anything else?');
                         } else {
-                            const callName = name.substring(0, name.indexOf(' '));
-                            conversation.ask('<speak>' + 'Hi again ' + callName + ', What do you want to look up?' + '</speak>');
-
-                            conversation.ask('Here is information about ' + outputText[0].Long_Title, new BasicCard({
+                            conversation.ask('Here is information about ' + outputText[0].Long_Title + '. ', new BasicCard({
                                 title: outputText[0].Long_Title,
                                 text: outputText[0].Descr + '  \n OTHER VERSIONS OF COURSES WITH THIS SAME COURSE CODE EXISTS',
                                 subtitle: outputText[0].College_Name,
@@ -220,7 +219,7 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                                     title: 'e-Campus',
                                     url: 'https://web.uri.edu/ecampus/student-access/',
                                 }),
-                            }));
+                            }), 'Can I help you with anything else?');
                         }
                     }
                 }
@@ -257,14 +256,15 @@ app.intent(['courses_at_a_level', 'courses_in_a_range'], (conversation, {courseS
                     for (let i = 0; i < 5 && i < outputText.length; i++) {
                         listOfClasses = listOfClasses + outputText[i].Long_Title + '<break time="500ms"/>: Course code is ' + outputText[i].FormalDesc + ' ' + outputText[i].Catalog + '. <break time="1" />';
                     }
-                conversation.ask('<speak>' + listOfClasses + '</speak>');
+                    listOfClasses = listOfClasses + 'What else can I help you with?';
+                    conversation.ask('<speak>' + listOfClasses + '</speak>');
                 } else {
-                    conversation.ask('<speak>' + 'Now getting information about ' + outputText[0].FormalDesc + ' classes between ' + courseNumber1 + ' and ' + courseNumber2 + '.  <break time="2" /> </speak>');
+                    conversation.ask('<speak>' + 'Now getting information about ' + outputText[0].FormalDesc + ' classes between ' + courseNumber1 + ' and ' + courseNumber2 + '. </speak>');
                     let listOfClasses = '';
                     for (let i = 0; i < outputText.length; i++) {
                         listOfClasses = listOfClasses + '**' + outputText[i].Long_Title + '**: ' + outputText[i].Subject + ' ' + outputText[i].Catalog + '  \n  \n';
                     }
-                    conversation.ask(' Here you go.', new BasicCard({
+                    conversation.ask(' Here you go. Can I help you with anything else?', new BasicCard({
                         title: outputText[0].FormalDesc + ': ' + courseNumber1 + '-' + courseNumber2,
                         text: listOfClasses,
                         subtitle: outputText[0].College_Name,
