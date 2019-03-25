@@ -20,11 +20,8 @@
 // from the Actions on Google client library.
 const {
     dialogflow,
-    Permission,
     Suggestions,
     BasicCard,
-    BrowseCarousel,
-    BrowseCarouselItem,
     Button,
     Image,
     SimpleResponse,
@@ -37,6 +34,7 @@ const request = require('request-promise');
 
 // Instantiate the Dialogflow client
 const app = dialogflow({debug: true});
+
 
 // The Subjects and associated course code
 const subjectTable = require('./configure/subject_lookup');
@@ -112,54 +110,22 @@ const suggestionsAfter = function (conversation) {
     conversation.ask(new Suggestions('specific course', 'courses within a range', 'no thanks'));
 };
 
+
 /* ###########################App Intents######################################## */
 app.intent('Default Welcome Intent', (conversation) => {
-    const name = conversation.user.storage.userName;
-    if (!name) {
-        // Asks the user's permission to know their name, for personalization.
-        conversation.ask(new Permission({
-            context: 'Hi there, so I can call you by your name',
-            permissions: 'NAME',
-        }));
-    } else {
-        let fName;
-        if (name.includes(' ') >= 1) {
-            fName = name.substring(0, name.indexOf(' '));
-        } else {
-            fName = name;
-        }
         conversation.ask(new SimpleResponse({
-            speech: '<speak>' + 'Welcome Back ' + fName + '! <break time="10ms" /> I am looking forward to assisting you with ' +
+            speech: '<speak>' + 'Hello!<break time="10ms" /> I am looking forward to assisting you with ' +
                 'your quest to find course information. You can say things such as, look up math 141, or ' +
                 'search for a computer science course between 200 and 300.  I can understand complex sentences, as ' +
                 'well as ask for information you may have not included. <break time="500ms" /> In addition to course information, I can' +
                 ' answer common frequently asked questions about <say-as interpret-as="characters">URI</say-as> <break time="900ms" />' +
                 '. What can I help you with?</speak>',
-            text: 'Welcome Back ' + fName + '.  \n You can do things such as look up a specific course, or ' +
+            text: 'Hello!  \nYou can do things such as look up a specific course, or ' +
                 'search for a course by course number range.  I can understand complex sentences as well, such as: ' +
                 '"lookup all 300 level writing courses".  \nWhat can I help you with?',
         }));
         suggestionsAfter(conversation);
-    }
 });
-
-// Handle the Dialogflow intent named 'actions_intent_PERMISSION'. If user
-// agreed to PERMISSION prompt, then boolean value 'permissionGranted' is true.
-app.intent('actions_intent_PERMISSION', (conversation, params, permissionGranted) => {
-    if (!permissionGranted) {
-        // If the user denied our request, go ahead with the conversation.
-        conversation.ask('<speak>' + 'Ok, no worries, what do you want to look up?' + '</speak>');
-        suggestionsAfter(conversation);
-    } else {
-        // If the user accepted our request, store their name in
-        // the 'conversation.user.storage' object for the duration of the conversation.
-        conversation.user.storage.userName = conversation.user.name.display;
-        conversation.ask('<speak>' + 'Thanks, ' + conversation.user.storage.userName + '. What do you' +
-            ' want to look up?' + '</speak>');
-        suggestionsAfter(conversation);
-    }
-});
-
 
 app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => {
     // Call the API
@@ -172,10 +138,10 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                 if (!conversation.screen) {
                     conversation.ask('<speak>' + 'Now getting information about ' + outputText[0].Long_Title +
                         '. <break time="2" /> ' + 'The course is about' + cleanResponse(outputText[0].Descr) +
-                        ' The class is at least ' + outputText[0].Min_Units + ' credits.</speak>');
+                        ' The class is at least ' + outputText[0].Min_Units + ' credits. Can I help you with anything else?</speak>');
                     if (outputText.length > 1) {
                         conversation.ask('<speak>' + 'There is also ' + outputText[1].Long_Title +
-                            ' under the same course code. This class is about' + outputText[1] + '</speak>.  Others may also exist');
+                            ' under the same course code. This class is about' + outputText[1] + '.  Others may also exist. Can I help you with anything else? </speak>');
                     }
                 } else {
                     if (outputText.length === 1) {
@@ -334,7 +300,6 @@ app.intent('sources', (conversation) => {
     ],
 }));
 });*/
-
 
 // Set the DialogflowApp object to handle the HTTPS POST request.
 exports.dialogflowFirebaseFulfillment = functions.https.onRequest(app);
