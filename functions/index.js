@@ -172,7 +172,7 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                     }
                 } else {
                     if (outputText.length === 1) {
-                        conversation.ask('Here is information about ' + outputText[0].Long_Title + '. ', new BasicCard({
+                        conversation.ask('<speak> Here is information about ' + outputText[0].Long_Title + '. <break time="1"/>Can I help you with anything else? </speak>', new BasicCard({
                             title: outputText[0].Long_Title,
                             text: cleanText(outputText[0].Descr),
                             subtitle: outputText[0].College_Name,
@@ -184,11 +184,10 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                                 title: 'e-Campus',
                                 url: 'https://web.uri.edu/ecampus/student-access/',
                             }),
-                            display: 'CROPPED',
-                        }), 'Can I help you with anything else?');
+                        }));
                     } else {
                         if (outputText[1].Catalog.includes('H') >= 1) {
-                            conversation.ask('Here is information about ' + outputText[0].Long_Title + '. ', new BasicCard({
+                            conversation.ask('<speak> Here is information about ' + outputText[0].Long_Title + '. <break time="1"/>Can I help you with anything else? </speak>', new BasicCard({
                                 title: outputText[0].Long_Title,
                                 text: cleanText(outputText[0].Descr + '  \n  \n **Honors Version:**  \n' + outputText[1].Descr),
                                 subtitle: outputText[0].College_Name,
@@ -200,21 +199,21 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                                     title: 'e-Campus',
                                     url: 'https://web.uri.edu/ecampus/student-access/',
                                 }),
-                            }), 'Can I help you with anything else?');
+                            }));
                         } else {
-                            conversation.ask('Here is information about ' + outputText[0].Long_Title + '. ', new BasicCard({
+                            conversation.ask('<speak> Here is information about ' + outputText[0].Long_Title + '. <break time="1"/>Can I help you with anything else? </speak>', new BasicCard({
                                 title: outputText[0].Long_Title,
                                 text: cleanText(outputText[0].Descr + '  \n OTHER VERSIONS OF COURSES WITH THIS SAME COURSE CODE EXISTS'),
                                 subtitle: outputText[0].College_Name,
                                 image: new Image({
                                     url: pictureArr[Math.floor(Math.random() * pictureArr.length)],
-                                    alt: 'Picture of Kingston Campus',
+                                    alt: 'Picture of Kingston Campus </speak>',
                                 }),
                                 buttons: new Button({
                                     title: 'e-Campus',
                                     url: 'https://web.uri.edu/ecampus/student-access/',
                                 }),
-                            }), 'Can I help you with anything else?');
+                            }));
                         }
                     }
                 }
