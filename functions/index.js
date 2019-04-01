@@ -109,6 +109,30 @@ const cleanText = function (theDescr) {
     return theDescr;
 };
 
+
+const fixTitle = function (theTitle) {
+    if (theTitle.substring(theDescr.length - 3, theDescr.length) === ' IV') {
+        theTitle = theTitle.substring(0, theDescr.length - 3) + ' 4';
+    } else if (theTitle.substring(theDescr.length - 4, theDescr.length) === ' III') {
+        theTitle = theTitle.substring(0, theDescr.length - 2) + ' 3';
+    } else if (theTitle.substring(theDescr.length - 3, theDescr.length) === ' II') {
+        theTitle = theTitle.substring(0, theDescr.length - 3) + ' 2';
+    } else if (theTitle.substring(theDescr.length - 2, theDescr.length) === ' I') {
+        theTitle = theTitle.substring(0, theDescr.length - 2) + ' 1';
+    } else if (theTitle.substring(theDescr.length - 2, theDescr.length) === ' V') {
+        theTitle = theTitle.substring(0, theDescr.length - 2) + ' 5';
+    } else {
+        theTitle = theTitle.replace(/ I: /gi, ' 1: ');
+        theTitle = theTitle.replace(/ II: /gi, '  2: ');
+        theTitle = theTitle.replace(/ III: /gi, '  3: : ');
+        theTitle = theTitle.replace(/ IV: /gi, '  4: : ');
+        theTitle = theTitle.replace(/ V: /gi, '  5: : ');
+        theTitle = theTitle.replace(/ VI: /gi, '  6: : ');
+        theTitle = theTitle.replace(/ VII: /gi, '  7: : ');
+    }
+    return theTitle;
+};
+
 const suggestionsAfter = function (conversation) {
     conversation.ask(new Suggestions('specific course', 'courses within a range', 'no thanks'));
 };
@@ -223,14 +247,21 @@ app.intent(['courses_at_a_level', 'courses_in_a_range'], (conversation, {courseS
         return callURIApi(subjectTable[courseSubject], courseNumber1, courseNumber2).then((outputText) => {
                 if (!conversation.screen) {
                     conversation.ask('<speak>' + 'Now getting information about ' + outputText[0].FormalDesc + ' classes between ' + courseNumber1 + ' and ' + courseNumber2 + '. <break time="2" /> </speak>');
-                let listOfClasses = ' I will say the name of the course and then the course code.  Remember the course code if you want to look up more information on the class. ';
+                    let listOfClasses = ' I will say the name of the course and then the course code.  Remember the course code if you want to look up more information on the class. ';
+                    if (outputText.length > 5) {
+                        listOfClasses = listOfClasses + 'It appears there are ' + outputText.length + ' results for this query.  I will start by saying the first five courses for this search.';
+                    }
                     for (let i = 0; i < 5 && i < outputText.length; i++) {
-                        listOfClasses = listOfClasses + outputText[i].Long_Title + '<break time="500ms"/>: Course code is ' + outputText[i].FormalDesc + ' ' + outputText[i].Catalog + '. <break time="1" />';
+                        listOfClasses = listOfClasses + outputText[i].Long_Title + '<break time="500ms"/>: Course code is ' + outputText[i].Subject + ' ' + outputText[i].Catalog + '. <break time="1" />';
+                    }
+                    if (outputText.length > 5) {
+                        listOfClasses = listOfClasses + 'If you want to hear the next five classes just say. Get me ' +
+                            outputText[0].FormalDesc + ' classes from ' + outputText[5].Catalog + ' to ' + courseNumber2 + '.';
                     }
                     listOfClasses = listOfClasses + 'What else can I help you with?';
                     conversation.ask('<speak>' + listOfClasses + '</speak>');
                 } else {
-                    conversation.ask('<speak>' + 'Now getting information about ' + outputText[0].FormalDesc + ' classes between ' + courseNumber1 + ' and ' + courseNumber2 + '. </speak>');
+                    conversation.ask('<speak>' + 'Now getting information about ' + outputText[0].FormalDesc + ' classes between ' + courseNumber1 + ' and ' + courseNumber2 + '. ' + ' </speak>');
                     let listOfClasses = '';
                     for (let i = 0; i < outputText.length; i++) {
                         listOfClasses = listOfClasses + '**' + outputText[i].Long_Title + '**: ' + outputText[i].Subject + ' ' + outputText[i].Catalog + '  \n  \n';
