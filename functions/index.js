@@ -23,6 +23,8 @@ const {
     Suggestions,
     BasicCard,
     Button,
+    BrowseCarousel,
+    BrowseCarouselItem,
     Image,
     SimpleResponse,
 } = require('actions-on-google');
@@ -110,25 +112,25 @@ const cleanText = function (theDescr) {
 };
 
 
-const fixTitle = function (theTitle) {
-    if (theTitle.substring(theDescr.length - 3, theDescr.length) === ' IV') {
-        theTitle = theTitle.substring(0, theDescr.length - 3) + ' 4';
-    } else if (theTitle.substring(theDescr.length - 4, theDescr.length) === ' III') {
-        theTitle = theTitle.substring(0, theDescr.length - 2) + ' 3';
-    } else if (theTitle.substring(theDescr.length - 3, theDescr.length) === ' II') {
-        theTitle = theTitle.substring(0, theDescr.length - 3) + ' 2';
-    } else if (theTitle.substring(theDescr.length - 2, theDescr.length) === ' I') {
-        theTitle = theTitle.substring(0, theDescr.length - 2) + ' 1';
-    } else if (theTitle.substring(theDescr.length - 2, theDescr.length) === ' V') {
-        theTitle = theTitle.substring(0, theDescr.length - 2) + ' 5';
+let fixTitle = function (theTitle) {
+    if (theTitle.substring(theTitle.length - 3, theTitle.length) === ' IV') {
+        theTitle = theTitle.substring(0, theTitle.length - 3) + ' 4';
+    } else if (theTitle.substring(theTitle.length - 4, theTitle.length) === ' III') {
+        theTitle = theTitle.substring(0, theTitle.length - 4) + ' 3';
+    } else if (theTitle.substring(theTitle.length - 3, theTitle.length) === ' II') {
+        theTitle = theTitle.substring(0, theTitle.length - 3) + ' 2';
+    } else if (theTitle.substring(theTitle.length - 2, theTitle.length) === ' I') {
+        theTitle = theTitle.substring(0, theTitle.length - 2) + ' 1';
+    } else if (theTitle.substring(theTitle.length - 2, theTitle.length) === ' V') {
+        theTitle = theTitle.substring(0, theTitle.length - 2) + ' 5';
     } else {
         theTitle = theTitle.replace(/ I: /gi, ' 1: ');
         theTitle = theTitle.replace(/ II: /gi, '  2: ');
-        theTitle = theTitle.replace(/ III: /gi, '  3: : ');
-        theTitle = theTitle.replace(/ IV: /gi, '  4: : ');
-        theTitle = theTitle.replace(/ V: /gi, '  5: : ');
-        theTitle = theTitle.replace(/ VI: /gi, '  6: : ');
-        theTitle = theTitle.replace(/ VII: /gi, '  7: : ');
+        theTitle = theTitle.replace(/ III: /gi, '  3: ');
+        theTitle = theTitle.replace(/ IV: /gi, '  4: ');
+        theTitle = theTitle.replace(/ V: /gi, '  5: ');
+        theTitle = theTitle.replace(/ VI: /gi, '  6: ');
+        theTitle = theTitle.replace(/ VII: /gi, '  7: ');
     }
     return theTitle;
 };
@@ -163,7 +165,7 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                     'class you are trying to find does not exist. Please try again.' + '</speak>');
             } else {
                 if (!conversation.screen) {
-                    conversation.ask('<speak>' + 'Now getting information about ' + outputText[0].Long_Title +
+                    conversation.ask('<speak>' + 'Now getting information about ' + fixTitle(outputText[0].Long_Title) +
                         '. <break time="2" /> ' + 'The course is about' + cleanResponse(outputText[0].Descr) +
                         ' The class is at least ' + outputText[0].Min_Units + ' credits. Can I help you with anything else?</speak>');
                     if (outputText.length > 1) {
@@ -172,7 +174,7 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                     }
                 } else {
                     if (outputText.length === 1) {
-                        conversation.ask('<speak> Here is information about ' + outputText[0].Long_Title + '. <break time="1"/>Can I help you with anything else? </speak>', new BasicCard({
+                        conversation.ask('<speak> Here is information about ' + fixTitle(outputText[0].Long_Title) + '. <break time="2"/>Can I help you with anything else? </speak>', new BasicCard({
                             title: outputText[0].Long_Title,
                             text: cleanText(outputText[0].Descr),
                             subtitle: outputText[0].College_Name,
@@ -187,7 +189,7 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                         }));
                     } else {
                         if (outputText[1].Catalog.includes('H') >= 1) {
-                            conversation.ask('<speak> Here is information about ' + outputText[0].Long_Title + '. <break time="1"/>Can I help you with anything else? </speak>', new BasicCard({
+                            conversation.ask('<speak> Here is information about ' + fixTitle(outputText[0].Long_Title) + '. <break time="2"/>Can I help you with anything else? </speak>', new BasicCard({
                                 title: outputText[0].Long_Title,
                                 text: cleanText(outputText[0].Descr + '  \n  \n **Honors Version:**  \n' + outputText[1].Descr),
                                 subtitle: outputText[0].College_Name,
@@ -201,7 +203,7 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                                 }),
                             }));
                         } else {
-                            conversation.ask('<speak> Here is information about ' + outputText[0].Long_Title + '. <break time="1"/>Can I help you with anything else? </speak>', new BasicCard({
+                            conversation.ask('<speak> Here is information about ' + fixTitle(outputText[0].Long_Title) + '. <break time="2"/>Can I help you with anything else? </speak>', new BasicCard({
                                 title: outputText[0].Long_Title,
                                 text: cleanText(outputText[0].Descr + '  \n OTHER VERSIONS OF COURSES WITH THIS SAME COURSE CODE EXISTS'),
                                 subtitle: outputText[0].College_Name,
@@ -238,7 +240,7 @@ app.intent(['courses_at_a_level', 'courses_in_a_range'], (conversation, {courseS
             courseNumber2 = courseNumber1;
             courseNumber1 = temp;
         }
-        // Keep corse codes under 1000
+        // Keep course codes under 1000
         if (courseNumber2 >= 1000) {
             courseNumber2 = 999;
         }
@@ -251,7 +253,7 @@ app.intent(['courses_at_a_level', 'courses_in_a_range'], (conversation, {courseS
                         listOfClasses = listOfClasses + 'It appears there are ' + outputText.length + ' results for this query.  I will start by saying the first five courses for this search.';
                     }
                     for (let i = 0; i < 5 && i < outputText.length; i++) {
-                        listOfClasses = listOfClasses + outputText[i].Long_Title + '<break time="500ms"/>: Course code is ' + outputText[i].Subject + ' ' + outputText[i].Catalog + '. <break time="1" />';
+                        listOfClasses = listOfClasses + fixTitle(outputText[i].Long_Title) + '<break time="500ms"/>: Course code is ' + outputText[i].Subject + ' ' + outputText[i].Catalog + '. <break time="1" />';
                     }
                     if (outputText.length > 5) {
                         listOfClasses = listOfClasses + 'If you want to hear the next five classes just say. Get me ' +
@@ -283,7 +285,7 @@ app.intent(['courses_at_a_level', 'courses_in_a_range'], (conversation, {courseS
         );
     } else {
         conversation.ask(new SimpleResponse({
-            speech: 'It appears the number you gave was negative.  Please retry.',
+            speech: '<speak>It appears the number you gave was negative.  Please retry.</speak>',
             text: 'Course numbers should not be a negative number.  Please retry\'',
         }));
     }
@@ -294,7 +296,7 @@ app.intent(['course_specific-no', 'courses_at_a_level-no', 'courses_in_a_range-n
 });
 
 app.intent('sources', (conversation) => {
-    // if (!conversation.screen) {
+
     conversation.ask(new SimpleResponse({
         speech: '<speak>' + 'I get all of my course information from the  ' +
             '<say-as interpret-as="characters">URI</say-as> e-Campus  <say-as interpret-as="characters">API</say-as> ' +
@@ -304,35 +306,40 @@ app.intent('sources', (conversation) => {
             '"characters">FAQ</say-as> based of of many live  <say-as interpret-as="characters">FAQ</say-as> ' +
             'pages on the  <say-as interpret-as="characters">URI</say-as> website.' + '</speak>',
         text: 'I get all of my course information from the URI e-Campus API found at api.uri.edu.  I get my pictures' +
-            ' from  URI\'s public flickr account, and I answer  FAQ based of of many live pages on the URI website.',
+            ' from URI\'s public flickr account, and I answer FAQ based of of many live pages on the URI website.',
     }));
-    conversation.ask();
+    if (conversation.screen) {
+        conversation.ask(new BrowseCarousel({
+            items: [
+                new BrowseCarouselItem({
+                    title: 'Images Source',
+                    url: 'https://www.flickr.com/photos/universityofrhodeisland/albums/72157644059272895/with/31284649924/',
+                    description: 'URI\'s public flickr account',
+                }),
+                new BrowseCarouselItem({
+                    title: 'Course Information',
+                    url: 'https://api.uri.edu/#/',
+                    description: 'The e-Campus API',
+                }),
+                new BrowseCarouselItem({
+                    title: 'Project Advisor',
+                    url: 'https://www.linkedin.com/in/david-brown-b3946a10/',
+                    description: 'URI Lecturer David Brown',
+                }),
+                new BrowseCarouselItem({
+                    title: 'Developer',
+                    url: 'https://linkedin.com/in/daniel-gauthier/',
+                    description: 'Daniel Gauthier',
+                }),
+                new BrowseCarouselItem({
+                    title: 'FAQ Information',
+                    url: 'https://www.web.uri.edu/',
+                    description: 'URI\'s main website',
+                }),
+            ],
+        }));
+    }
 });
-/* conversation.ask(new BrowseCarousel({
-    items: [
-        new BrowseCarouselItem({
-            title: 'Images Source',
-            url: 'https://www.flickr.com/photos/universityofrhodeisland/albums/72157644059272895/with/31284649924/',
-            description: 'URI\'s public flickr account',
-        }),
-        new BrowseCarouselItem({
-            title: 'Course Information',
-            url: 'https://api.uri.edu/#/',
-            description: 'The e-Campus API',
-        }),
-        new BrowseCarouselItem({
-            title: 'Project Advisor',
-            url: 'https://www.linkedin.com/in/david-brown-b3946a10/',
-            description: 'URI Lecturer David Brown',
-        }),
-        new BrowseCarouselItem({
-            title: 'FAQ Information',
-            url: 'https://www.web.uri.edu/',
-            description: 'URI\'s main website',
-        }),
-    ],
-}));
-});*/
 
 // Set the DialogflowApp object to handle the HTTPS POST request.
 exports.dialogflowFirebaseFulfillment = functions.https.onRequest(app);
