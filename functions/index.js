@@ -49,13 +49,9 @@ const pictureArr = ['https://farm2.staticflickr.com/1783/28368046617_efef15cc1b_
     'https://farm4.staticflickr.com/3757/13898523014_da6dce1b5e_z.jpg',
     'https://farm5.staticflickr.com/4845/46287975361_c23995f3a4_z.jpg',
     'https://farm5.staticflickr.com/4902/45564398184_e1a5139a42_z.jpg',
-    'https://farm1.staticflickr.com/261/31750578890_7d0d009e36_z.jpg',
-    'https://farm1.staticflickr.com/305/31750567220_c262d8a2e4_z.jpg',
     'https://farm1.staticflickr.com/767/31369620724_208ab67e3d_z.jpg',
     'https://farm1.staticflickr.com/552/32007601851_c63f0afdbb_z.jpg',
-    'https://farm8.staticflickr.com/7455/16270728670_b6fca11c01_z.jpg',
     'https://farm1.staticflickr.com/357/31977069912_efb2bf6b90_z.jpg',
-    'https://farm8.staticflickr.com/7445/16457238852_7b641ff858_z.jpg',
     'https://farm9.staticflickr.com/8602/27691258664_e56f584cef_z.jpg',
     'https://farm5.staticflickr.com/4826/45564403964_e7cc441e61_z.jpg',
     'https://farm5.staticflickr.com/4902/46287974851_cd29a71c5a_z.jpg',
@@ -102,7 +98,14 @@ const cleanResponse = function (theDescr) {
     theDescr = theDescr.replace(/ crs./gi, ' Credits');
     theDescr = theDescr.replace(/pre:/gi, ' Prerequisites:');
     theDescr = theDescr.replace(/c-/gi, 'C minus');
+    return theDescr;
+};
 
+
+const cleanText = function (theDescr) {
+    theDescr = theDescr.replace(/lec. /gi, 'Lecture: ');
+    theDescr = theDescr.replace(/ crs./gi, ' Credits');
+    theDescr = theDescr.replace(/pre: /gi, ' Prerequisites: ');
     return theDescr;
 };
 
@@ -147,7 +150,7 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                     if (outputText.length === 1) {
                         conversation.ask('Here is information about ' + outputText[0].Long_Title + '. ', new BasicCard({
                             title: outputText[0].Long_Title,
-                            text: outputText[0].Descr,
+                            text: cleanText(outputText[0].Descr),
                             subtitle: outputText[0].College_Name,
                             image: new Image({
                                 url: pictureArr[Math.floor(Math.random() * pictureArr.length)],
@@ -163,7 +166,7 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                         if (outputText[1].Catalog.includes('H') >= 1) {
                             conversation.ask('Here is information about ' + outputText[0].Long_Title + '. ', new BasicCard({
                                 title: outputText[0].Long_Title,
-                                text: outputText[0].Descr + '  \n  \n **Honors Version:**  \n' + outputText[1].Descr,
+                                text: cleanText(outputText[0].Descr + '  \n  \n **Honors Version:**  \n' + outputText[1].Descr),
                                 subtitle: outputText[0].College_Name,
                                 image: new Image({
                                     url: pictureArr[Math.floor(Math.random() * pictureArr.length)],
@@ -177,7 +180,7 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                         } else {
                             conversation.ask('Here is information about ' + outputText[0].Long_Title + '. ', new BasicCard({
                                 title: outputText[0].Long_Title,
-                                text: outputText[0].Descr + '  \n OTHER VERSIONS OF COURSES WITH THIS SAME COURSE CODE EXISTS',
+                                text: cleanText(outputText[0].Descr + '  \n OTHER VERSIONS OF COURSES WITH THIS SAME COURSE CODE EXISTS'),
                                 subtitle: outputText[0].College_Name,
                                 image: new Image({
                                     url: pictureArr[Math.floor(Math.random() * pictureArr.length)],
