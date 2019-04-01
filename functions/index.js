@@ -220,8 +220,7 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                     }
                 }
             }
-            conversation.ask(new Suggestions('specific course'
-                , 'courses within a range', 'no thanks'));
+            conversation.ask(new Suggestions('specific course', 'courses within a range', 'no thanks'));
         });
     } else {
         conversation.ask('Course numbers should not be a negative number.  Please try again.');
@@ -296,7 +295,6 @@ app.intent(['course_specific-no', 'courses_at_a_level-no', 'courses_in_a_range-n
 });
 
 app.intent('sources', (conversation) => {
-
     conversation.ask(new SimpleResponse({
         speech: '<speak>' + 'I get all of my course information from the  ' +
             '<say-as interpret-as="characters">URI</say-as> e-Campus  <say-as interpret-as="characters">API</say-as> ' +
