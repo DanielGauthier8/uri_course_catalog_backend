@@ -183,7 +183,7 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                                 alt: 'Picture of Kingston Campus',
                             }),
                             buttons: new Button({
-                                title: 'e-Campus',
+                                title: 'eCampus',
                                 url: 'https://web.uri.edu/ecampus/student-access/',
                             }),
                         }));
@@ -198,7 +198,7 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                                     alt: 'Picture of Kingston Campus',
                                 }),
                                 buttons: new Button({
-                                    title: 'e-Campus',
+                                    title: 'eCampus',
                                     url: 'https://web.uri.edu/ecampus/student-access/',
                                 }),
                             }));
@@ -212,7 +212,7 @@ app.intent('course_specific', (conversation, {courseSubject, courseNumber1}) => 
                                     alt: 'Picture of Kingston Campus </speak>',
                                 }),
                                 buttons: new Button({
-                                    title: 'e-Campus',
+                                    title: 'eCampus',
                                     url: 'https://web.uri.edu/ecampus/student-access/',
                                 }),
                             }));
@@ -245,6 +245,7 @@ app.intent(['courses_at_a_level', 'courses_in_a_range'], (conversation, {courseS
         }
         // Call the API
         return callURIApi(subjectTable[courseSubject], courseNumber1, courseNumber2).then((outputText) => {
+            if (outputText.length !== 0) {
                 if (!conversation.screen) {
                     conversation.ask('<speak>' + 'Now getting information about ' + outputText[0].FormalDesc + ' classes between ' + courseNumber1 + ' and ' + courseNumber2 + '. <break time="2" /> </speak>');
                     let listOfClasses = ' I will say the name of the course and then the course code.  Remember the course code if you want to look up more information on the class. ';
@@ -275,13 +276,18 @@ app.intent(['courses_at_a_level', 'courses_in_a_range'], (conversation, {courseS
                             alt: 'Picture of Kingston Campus',
                         }),
                         buttons: new Button({
-                            title: 'e-Campus',
+                            title: 'eCampus',
                             url: 'https://web.uri.edu/ecampus/student-access/',
                         }),
                     }));
                 }
+            } else {
+                conversation.ask(new SimpleResponse({
+                    speech: '<speak>No courses were found in this range.  Please try again.</speak>',
+                    text: 'No courses were found in this range.  Please try again\'',
+                }));
             }
-        );
+        });
     } else {
         conversation.ask(new SimpleResponse({
             speech: '<speak>It appears the number you gave was negative.  Please retry.</speak>',
@@ -297,13 +303,13 @@ app.intent(['course_specific-no', 'courses_at_a_level-no', 'courses_in_a_range-n
 app.intent('sources', (conversation) => {
     conversation.ask(new SimpleResponse({
         speech: '<speak>' + 'I get all of my course information from the  ' +
-            '<say-as interpret-as="characters">URI</say-as> e-Campus  <say-as interpret-as="characters">API</say-as> ' +
+            '<say-as interpret-as="characters">URI</say-as> eCampus  <say-as interpret-as="characters">API</say-as> ' +
             'found at  <say-as interpret-as="characters">API</say-as> dot  <say-as interpret-as="characters">URI</say-as> dot ' +
             ' <say-as interpret-as="characters">EDU</say-as>.  I get my pictures from  <say-as interpret-' +
             'as="characters">URI</say-as>\'s public flickr account, and I answer  <say-as interpret-as=' +
             '"characters">FAQ</say-as> based of of many live  <say-as interpret-as="characters">FAQ</say-as> ' +
             'pages on the  <say-as interpret-as="characters">URI</say-as> website.' + '</speak>',
-        text: 'I get all of my course information from the URI e-Campus API found at api.uri.edu.  I get my pictures' +
+        text: 'I get all of my course information from the URI eCampus API found at api.uri.edu.  I get my pictures' +
             ' from URI\'s public flickr account, and I answer FAQ based of of many live pages on the URI website.',
     }));
     if (conversation.screen) {
@@ -317,7 +323,7 @@ app.intent('sources', (conversation) => {
                 new BrowseCarouselItem({
                     title: 'Course Information',
                     url: 'https://api.uri.edu/#/',
-                    description: 'The e-Campus API',
+                    description: 'The eCampus API',
                 }),
                 new BrowseCarouselItem({
                     title: 'Project Advisor',
