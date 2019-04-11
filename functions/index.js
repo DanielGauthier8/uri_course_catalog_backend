@@ -108,6 +108,7 @@ const cleanText = function (theDescr) {
     theDescr = theDescr.replace(/lec. /gi, 'Lecture: ');
     theDescr = theDescr.replace(/ crs./gi, ' Credits');
     theDescr = theDescr.replace(/pre: /gi, ' Prerequisites: ');
+    theDescr = theDescr.replace(/, lab. /gi, ', Lab: : ');
     return theDescr;
 };
 
@@ -143,10 +144,10 @@ const suggestionsAfter = function (conversation) {
 /* ###########################App Intents######################################## */
 app.intent('Default Welcome Intent', (conversation) => {
         conversation.ask(new SimpleResponse({
-            speech: '<speak>' + 'Hello!<break time="10ms" /> I am looking forward to assisting you with ' +
+            speech: '<speak>' + 'Hello and welcome to the University of Rhode Island\'s course catalog!<break time="10ms" /> I am looking forward to assisting you with ' +
                 'your quest to find course information. Just say help if you need guidance using the application' +
                 '. What can I help you with?</speak>',
-            text: 'Hello and welcome to URI Course Catalog!  \nYou can look up things such as a specific course, courses of a subject in a range, or ' +
+            text: 'Hello and welcome to URI Course Catalog!  \nYou can look up things such as courses of a subject in a range, specific courses, and ' +
                 'answers to frequently asked questions.  \nWhat can I help you with?',
         }));
         suggestionsAfter(conversation);
