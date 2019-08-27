@@ -5,6 +5,7 @@ The backend of the program can be found at:
 https://github.com/DanielGauthier8/uri_course_catalog_frontend 
 
 The application can be found at:
+
 https://assistant.google.com/services/a/uid/00000050301d68db?hl=en
 
 ## Summary:
