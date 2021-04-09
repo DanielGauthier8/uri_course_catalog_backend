@@ -9,7 +9,7 @@ https://assistant.google.com/services/a/uid/00000050301d68db?hl=en
 
 ## Summary:
 
-This will be a Google Assistant Action that can get details for course's at the University of Rhode Island.
+This is a Google Assistant Action that can get details for course's at the University of Rhode Island.
 
 ## Proposal:
 
